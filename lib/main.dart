@@ -1,3 +1,4 @@
+import 'package:drivex/feature/splash.dart';
 import 'package:flutter/material.dart';
 
 void main(){
@@ -14,7 +15,7 @@ class DriveXApp extends StatelessWidget {
       child:
       MaterialApp(
         debugShowCheckedModeBanner: false,
-        home:  Container(),
+        home:  Splash(),
       ),
     );
   }
