@@ -1,4 +1,5 @@
-import 'package:drivex/constants/color_constant.dart';
+import 'package:drivex/core/constants/color_constant.dart';
+import 'package:drivex/core/constants/localVariables.dart';
 import 'package:drivex/main.dart';
 import 'package:flutter/material.dart';
 

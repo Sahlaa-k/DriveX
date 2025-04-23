@@ -1,4 +1,5 @@
-import 'package:drivex/pages/home.dart';
+
+import 'package:drivex/feature/onboarding/onboardingPage.dart';
 import 'package:flutter/material.dart';
 
 import 'dart:async';
@@ -70,7 +71,7 @@ class _SplashState extends State<Splash> with TickerProviderStateMixin {
     }
 
     Future.delayed(const Duration(seconds: 1), () {
-      Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => Home(),), (route) => false,);
+      Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => PageViewFoodApp(),), (route) => false,);
     });
   }
 
@@ -115,3 +116,4 @@ class _SplashState extends State<Splash> with TickerProviderStateMixin {
     );
   }
 }
+

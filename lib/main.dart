@@ -1,13 +1,11 @@
+
+import 'package:drivex/core/constants/localVariables.dart';
 import 'package:drivex/feature/onboarding/splash.dart';
 import 'package:flutter/material.dart';
 
-late double height;
-late double width;
-
-void main() {
+void main(){
   runApp(const DriveXApp());
 }
-
 class DriveXApp extends StatelessWidget {
   const DriveXApp({super.key});
   @override
@@ -18,9 +16,10 @@ class DriveXApp extends StatelessWidget {
       onTap: () {
         FocusManager.instance.primaryFocus!.unfocus();
       },
-      child: MaterialApp(
+      child:
+      MaterialApp(
         debugShowCheckedModeBanner: false,
-        home: Splash(),
+        home:  Splash(),
       ),
     );
   }
