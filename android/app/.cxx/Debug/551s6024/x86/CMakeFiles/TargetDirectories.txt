@@ -1,0 +1,2 @@
+D:/check_test/DriveX/android/app/.cxx/Debug/551s6024/x86/CMakeFiles/edit_cache.dir
+D:/check_test/DriveX/android/app/.cxx/Debug/551s6024/x86/CMakeFiles/rebuild_cache.dir
