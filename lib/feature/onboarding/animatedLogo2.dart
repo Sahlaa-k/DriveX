@@ -116,7 +116,7 @@ class _AnimatedLogo2State extends State<AnimatedLogo2> with TickerProviderStateM
                 children: fadedLetters,
               ),
             ),
-            const TextSpan(text: 'X'),
+            const TextSpan(text: 'X',style: Google),
           ],
         ),
       ),

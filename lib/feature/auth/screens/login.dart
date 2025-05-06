@@ -55,7 +55,7 @@ class _LoginPageState extends State<LoginPage> {
                       gradient: LinearGradient(
                           colors:[
                             ColorConstant.primaryColor,
-                            ColorConstant.secondaryColor,ColorConstant.secondaryColor,
+                            ColorConstant.secondaryColor,
 
 
                           ],
