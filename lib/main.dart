@@ -1,5 +1,6 @@
 
 import 'package:drivex/core/constants/localVariables.dart';
+import 'package:drivex/feature/auth/screens/login.dart';
 import 'package:drivex/feature/onboarding/onboardingPage.dart';
 import 'package:drivex/feature/onboarding/splash.dart';
 import 'package:flutter/material.dart';
@@ -20,7 +21,7 @@ class DriveXApp extends StatelessWidget {
       child:
       MaterialApp(
         debugShowCheckedModeBanner: false,
-        home:  Splash(),
+        home:  LoginPage(),
       ),
     );
   }

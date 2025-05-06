@@ -132,7 +132,7 @@ class _OnboardingPagesState extends State<OnboardingPages> {
                                     ),
                                     child: Center(
                                       child: Text(
-                                        "Get Started",
+                                        " Get Started",
                                         style: TextStyle(
                                             color:
                                                 ColorConstant.backgroundColor,

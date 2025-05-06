@@ -1,5 +1,6 @@
 import 'package:drivex/core/constants/color_constant.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class AnimatedLogo2 extends StatefulWidget {
   final double fontSize;
@@ -46,11 +47,11 @@ class _AnimatedLogo2State extends State<AnimatedLogo2> with TickerProviderStateM
             .map(
               (e) => Text(
             e,
-            style: TextStyle(
-              color: ColorConstant.primaryColor,
-              fontSize: widget.fontSize,
-              fontWeight: FontWeight.w500,
-            ),
+                style: GoogleFonts.inika(
+                  color: ColorConstant.backgroundColor.withOpacity(0.4),
+                  fontSize: widget.fontSize,
+                  fontWeight: FontWeight.w500,
+                ),
           ),
         )
             .toList();
@@ -75,7 +76,7 @@ class _AnimatedLogo2State extends State<AnimatedLogo2> with TickerProviderStateM
             opacity: fadeAnimation,
             child: Text(
               letters[i],
-              style: TextStyle(
+                style: GoogleFonts.inika(
                 color: ColorConstant.backgroundColor.withOpacity(0.4),
                 fontSize: widget.fontSize,
                 fontWeight: FontWeight.w500,
@@ -108,7 +109,7 @@ class _AnimatedLogo2State extends State<AnimatedLogo2> with TickerProviderStateM
             letterSpacing: 2,
           ),
           children: [
-            const TextSpan(text: 'D'),
+            TextSpan(text: 'D',style: GoogleFonts.inika()),
             WidgetSpan(
               alignment: PlaceholderAlignment.middle,
               child: Row(
@@ -116,7 +117,7 @@ class _AnimatedLogo2State extends State<AnimatedLogo2> with TickerProviderStateM
                 children: fadedLetters,
               ),
             ),
-            const TextSpan(text: 'X',style: Google),
+            TextSpan(text: 'X',style: GoogleFonts.inika()),
           ],
         ),
       ),
