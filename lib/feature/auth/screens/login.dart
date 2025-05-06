@@ -62,9 +62,9 @@ class _LoginPageState extends State<LoginPage> {
                           begin:Alignment.topLeft,
 
                           end:Alignment.bottomRight,
-                          // stops: [
-                          //   0.4,0.8
-                          // ]
+                          stops: [
+                            0.4,0.8
+                          ]
                       )
                   ),
                 ),
