@@ -1,5 +1,6 @@
 
 import 'package:drivex/core/constants/localVariables.dart';
+import 'package:drivex/feature/onboarding/onboardingPage.dart';
 import 'package:drivex/feature/onboarding/splash.dart';
 import 'package:flutter/material.dart';
 

@@ -97,36 +97,36 @@ class _HomeState extends State<Home> {
                               ),
                             ),
                       
-                      ListTile(
-                  contentPadding: const EdgeInsets.all(12),
-                  leading: CircleAvatar(
-                    radius: 28,
-                    backgroundImage: NetworkImage(drivers['image']),
-                  ),
-                  title: Text(driver['name']),
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(driver['bio']),
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          Icon(Icons.star, size: 18, color: Colors.orange),
-                          const SizedBox(width: 4),
-                          Text('${driver['rating']} ★'),
-                          const SizedBox(width: 10),
-                          Icon(Icons.location_on,
-                              size: 16, color: Colors.blueAccent),
-                          Text(driver['location']),
-                        ],
-                      )
-                    ],
-                  ),
-                  trailing: ElevatedButton(
-                    onPressed: () {},
-                    child: const Text('Hire'),
-                  ),
-                )
+                //       ListTile(
+                //   contentPadding: const EdgeInsets.all(12),
+                //   leading: CircleAvatar(
+                //     radius: 28,
+                //     backgroundImage: NetworkImage(drivers['image']),
+                //   ),
+                //   title: Text(driver['name']),
+                //   subtitle: Column(
+                //     crossAxisAlignment: CrossAxisAlignment.start,
+                //     children: [
+                //       Text(driver['bio']),
+                //       const SizedBox(height: 4),
+                //       Row(
+                //         children: [
+                //           Icon(Icons.star, size: 18, color: Colors.orange),
+                //           const SizedBox(width: 4),
+                //           Text('${driver['rating']} ★'),
+                //           const SizedBox(width: 10),
+                //           Icon(Icons.location_on,
+                //               size: 16, color: Colors.blueAccent),
+                //           Text(driver['location']),
+                //         ],
+                //       )
+                //     ],
+                //   ),
+                //   trailing: ElevatedButton(
+                //     onPressed: () {},
+                //     child: const Text('Hire'),
+                //   ),
+                // )
                     ],
                   ),
                 ),
