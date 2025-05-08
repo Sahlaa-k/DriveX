@@ -160,6 +160,7 @@ class _OnboardingPagesState extends State<OnboardingPages> {
                       );
                     },
                   ),
+
                 ],
               ),
             ),

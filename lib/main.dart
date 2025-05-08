@@ -12,8 +12,7 @@ class DriveXApp extends StatelessWidget {
   const DriveXApp({super.key});
   @override
   Widget build(BuildContext context) {
-    height = MediaQuery.of(context).size.height;
-    width = MediaQuery.of(context).size.width;
+        width = MediaQuery.of(context).size.width;
     return GestureDetector(
       onTap: () {
         FocusManager.instance.primaryFocus!.unfocus();
