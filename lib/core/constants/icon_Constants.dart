@@ -1,3 +1,3 @@
 class IconConstants {
-  static const google = "";
+  static const google = "assets/icons/google.svg";
 }

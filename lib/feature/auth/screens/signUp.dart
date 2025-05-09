@@ -18,6 +18,7 @@ class _SignUpPageState extends State<SignUpPage> {
   TextEditingController rePasswordController=TextEditingController();
   @override
   Widget build(BuildContext context) {
+
     return Scaffold(
       backgroundColor: ColorConstant.primaryColor,
 body: Column(children: [
