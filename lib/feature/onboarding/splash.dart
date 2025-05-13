@@ -1,9 +1,9 @@
+import 'dart:async';
 
 import 'package:drivex/core/constants/localVariables.dart';
 import 'package:drivex/feature/onboarding/animatedLogo.dart';
 import 'package:drivex/feature/onboarding/onboardingPage.dart';
 import 'package:flutter/material.dart';
-import 'dart:async';
 
 class Splash extends StatefulWidget {
   const Splash({super.key});
@@ -13,8 +13,6 @@ class Splash extends StatefulWidget {
 }
 
 class _SplashState extends State<Splash> with TickerProviderStateMixin {
-
-
   @override
   void initState() {
     super.initState();
@@ -22,15 +20,13 @@ class _SplashState extends State<Splash> with TickerProviderStateMixin {
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (context) => OnboardingPages()),
-            (route) => false,
+        (route) => false,
       );
     });
   }
 
   @override
   Widget build(BuildContext context) {
-
-
     return Scaffold(
       backgroundColor: Colors.black,
       body: Center(

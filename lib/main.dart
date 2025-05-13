@@ -1,4 +1,3 @@
-
 import 'package:drivex/core/constants/localVariables.dart';
 import 'package:drivex/feature/auth/screens/login.dart';
 import 'package:drivex/feature/onboarding/onboardingPage.dart';
@@ -12,8 +11,8 @@ class DriveXApp extends StatelessWidget {
   const DriveXApp({super.key});
   @override
   Widget build(BuildContext context) {
-    height=MediaQuery.of(context).size.height;
-    width=MediaQuery.of(context).size.width;
+        width = MediaQuery.of(context).size.width;
+        height = MediaQuery.of(context).size.height;
     return GestureDetector(
       onTap: () {
         FocusManager.instance.primaryFocus!.unfocus();
@@ -21,7 +20,7 @@ class DriveXApp extends StatelessWidget {
       child:
       MaterialApp(
         debugShowCheckedModeBanner: false,
-        home:  LoginPage(),
+        home:  Splash(),
       ),
     );
   }

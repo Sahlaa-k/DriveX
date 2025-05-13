@@ -7,7 +7,6 @@ import 'package:flutter/material.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 
 import '../../core/constants/color_constant.dart';
-import '../../main.dart';
 
 class OnboardingPages extends StatefulWidget {
   const OnboardingPages({super.key});
@@ -160,7 +159,6 @@ class _OnboardingPagesState extends State<OnboardingPages> {
                       );
                     },
                   ),
-
                 ],
               ),
             ),
