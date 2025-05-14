@@ -1,4 +1,5 @@
 import 'package:drivex/core/constants/color_constant.dart';
+import 'package:drivex/core/constants/localVariables.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -77,8 +78,10 @@ class _AnimatedLogo2State extends State<AnimatedLogo2> with TickerProviderStateM
             child: Text(
               letters[i],
                 style: GoogleFonts.inika(
-                color: ColorConstant.backgroundColor.withOpacity(0.4),
-                fontSize: widget.fontSize,
+                // color: ColorConstant.backgroundColor.withOpacity(0.4),
+                color: Colors.white,
+                // fontSize: widget.fontSize,
+                fontSize: width*.06,
                 fontWeight: FontWeight.w500,
               ),
             ),

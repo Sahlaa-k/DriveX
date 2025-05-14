@@ -1,5 +1,6 @@
 import 'package:drivex/core/constants/color_constant.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -54,9 +55,8 @@ class _HomeState extends State<Home> {
                       children: [
                         Text(
                           'DriveX',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: height * .03,
+                          style: GoogleFonts.inika(color: Colors.white,fontSize: width*.06,
+                          fontWeight: FontWeight.w500
                           ),
                         ),
                         Container(
@@ -75,24 +75,27 @@ class _HomeState extends State<Home> {
                         )
                       ],
                     ),
-                    SizedBox(height: height * .05),
-                    TextFormField(
-                      decoration: InputDecoration(
-                        hintText: 'Search here...',
-                        hintStyle: const TextStyle(
-                          color: Colors.black54,
-                          fontWeight: FontWeight.w600,
-                        ),
-                        prefixIcon: const Icon(Icons.search),
-                        filled: true,
-                        fillColor: Colors.white,
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(width * .03),
-                          borderSide: BorderSide.none,
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(width * .03),
-                          borderSide: BorderSide.none,
+                    SizedBox(height: height * .065),
+                    SizedBox(
+                      height: height*.06,
+                      child: TextFormField(
+                        decoration: InputDecoration(
+                          hintText: 'Search here...',
+                          hintStyle: const TextStyle(
+                            color: Colors.black54,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          prefixIcon: const Icon(Icons.search),
+                          filled: true,
+                          fillColor: Colors.white,
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(width * .03),
+                            borderSide: BorderSide.none,
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(width * .03),
+                            borderSide: BorderSide.none,
+                          ),
                         ),
                       ),
                     ),

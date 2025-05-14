@@ -40,40 +40,119 @@ class _LoginPageState extends State<LoginPage> {
               child: Column(
                 children: [
                   Center(
-                    child: Container(
-                      height: width * 1,
-                      width: width * 1,
-                      child: Center(
-                        child: AnimatedLogo2(
-                          fontSize: height * 0.05,
-                          animateLetters: true,
+                    child: Row(mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        Column(mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          // mainAxisAlignment: MainAxisAlignment.end,
+                                              mainAxisSize: MainAxisSize.max,
+                        // crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            
+                            Container(
+                              height: width * .225,
+                              width: width * .125,
+                              
+                              decoration: BoxDecoration(
+                                  // color: ColorConstant.secondaryColor.withOpacity(0.2),
+                                  borderRadius: BorderRadius.only(
+                                    topRight: Radius.circular(width*0.075),
+                                    bottomLeft: Radius.circular(width*0.075)
+                                      // bottomRight: Radius.circular(width * 0.4),
+                                      // topLeft: Radius.circular(width * 0.4),
+                                      ),
+                                  // shape: BoxShape.circle,
+                                  gradient: LinearGradient(
+                                      colors: [
+                                        // ColorConstant.secondaryColor,
+                                        ColorConstant.primaryColor,
+                                        ColorConstant.secondaryColor,
+                                        
+                                      ],
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                      stops: [0.4, 0.8]
+                                      ),
+                                      ),
+                            ),
+                            SizedBox(
+                              height: width*.7,
+                            ),
+                          ],
                         ),
-                      ),
-                      decoration: BoxDecoration(
-                          // color: ColorConstant.secondaryColor.withOpacity(0.2),
-                          borderRadius: BorderRadius.only(
-                              bottomLeft: Radius.circular(width * 0.5),
-                              topRight: Radius.circular(width * 0.5),
-                              // bottomRight: Radius.circular(width * 0.4),
-                              // topLeft: Radius.circular(width * 0.4),
-                              ),
-                          // shape: BoxShape.circle,
-                          gradient: LinearGradient(
-                              colors: [
-                                // ColorConstant.secondaryColor,
-                                ColorConstant.primaryColor,
-                                ColorConstant.secondaryColor,
-                                
-                              ],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              stops: [0.4, 0.8]
-                              ),
-                              ),
+                    
+                        Container(
+                          height: width * .7,
+                          width: width * .7,
+                          child: Center(
+                            child: AnimatedLogo2(
+                              fontSize: height * 0.04,
+                              animateLetters: true,
+                            ),
+                          ),
+                          decoration: BoxDecoration(
+                              // color: ColorConstant.secondaryColor.withOpacity(0.2),
+                              borderRadius: BorderRadius.only(
+                                  bottomLeft: Radius.circular(width * 0.4),
+                                  topRight: Radius.circular(width * 0.4),
+                                  // bottomRight: Radius.circular(width * 0.4),
+                                  // topLeft: Radius.circular(width * 0.4),
+                                  ),
+                              // shape: BoxShape.circle,
+                              gradient: LinearGradient(
+                                  colors: [
+                                    // ColorConstant.secondaryColor,
+                                    ColorConstant.primaryColor,
+                                    ColorConstant.secondaryColor,
+                                    
+                                  ],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                  stops: [0.4, 0.8]
+                                  ),
+                                  ),
+                        ),
+                    
+                        Column(mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          // mainAxisAlignment: MainAxisAlignment.end,
+                                              mainAxisSize: MainAxisSize.max,
+                        // crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            SizedBox(
+                              height: width*.7,
+                            ),
+                            Container(
+                              height: width * .225,
+                              width: width * .125,
+                              
+                              decoration: BoxDecoration(
+                                  // color: ColorConstant.secondaryColor.withOpacity(0.2),
+                                  borderRadius: BorderRadius.only(
+                                    topRight: Radius.circular(width*0.075),
+                                    bottomLeft: Radius.circular(width*0.075)
+                                      // bottomRight: Radius.circular(width * 0.4),
+                                      // topLeft: Radius.circular(width * 0.4),
+                                      ),
+                                  // shape: BoxShape.circle,
+                                  gradient: LinearGradient(
+                                      colors: [
+                                        // ColorConstant.secondaryColor,
+                                        ColorConstant.primaryColor,
+                                        ColorConstant.secondaryColor,
+                                        
+                                      ],
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                      stops: [0.4, 0.8]
+                                      ),
+                                      ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
                   SizedBox(
-                    height: height * 0.04,
+                    height: height * 0.02,
                   ),
                   Text(
                     "Welcome",
@@ -110,6 +189,7 @@ class _LoginPageState extends State<LoginPage> {
                           filled: true,
                           labelText: "E-mail",
                           labelStyle: GoogleFonts.montserrat(
+                            fontSize: width*.035,
                             color: ColorConstant.thirdColor,
                             fontWeight: FontWeight.w400,
                           ),
@@ -148,6 +228,7 @@ class _LoginPageState extends State<LoginPage> {
                           filled: true,
                           labelText: "Password",
                           labelStyle: GoogleFonts.montserrat(
+                            fontSize: width*.035,
                             color: ColorConstant.thirdColor,
                             fontWeight: FontWeight.w400,
                           ),
@@ -196,8 +277,9 @@ class _LoginPageState extends State<LoginPage> {
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       Text(
-                        "Don't you have an account ",
+                        "Don't have an account ?",
                         style: TextStyle(
+                          fontSize: width*.035,
                           color: ColorConstant.thirdColor,
                         ),
                       ),
@@ -211,8 +293,9 @@ class _LoginPageState extends State<LoginPage> {
                               (route) => false);
                         },
                         child: Text(
-                          " Sign-Up?",
+                          " Sign-Up",
                           style: TextStyle(
+                            fontSize: width*.035,
                               color: ColorConstant.primaryColor,
                               fontWeight: FontWeight.w700),
                         ),
