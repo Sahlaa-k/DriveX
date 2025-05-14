@@ -1,18 +1,25 @@
+
 import 'package:drivex/core/constants/localVariables.dart';
 import 'package:drivex/feature/auth/screens/login.dart';
 import 'package:drivex/feature/onboarding/onboardingPage.dart';
 import 'package:drivex/feature/onboarding/splash.dart';
+import 'package:drivex/firebase_options.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-
-void main(){
-  runApp(const DriveXApp());
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  runApp( const ProviderScope(child: DriveXApp()));
 }
 class DriveXApp extends StatelessWidget {
   const DriveXApp({super.key});
   @override
   Widget build(BuildContext context) {
-        width = MediaQuery.of(context).size.width;
-        height = MediaQuery.of(context).size.height;
+    height=MediaQuery.of(context).size.height;
+    width=MediaQuery.of(context).size.width;
     return GestureDetector(
       onTap: () {
         FocusManager.instance.primaryFocus!.unfocus();
@@ -20,7 +27,7 @@ class DriveXApp extends StatelessWidget {
       child:
       MaterialApp(
         debugShowCheckedModeBanner: false,
-        home:  Splash(),
+        home:  LoginPage(),
       ),
     );
   }

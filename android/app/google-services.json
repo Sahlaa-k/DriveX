@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "433045774465",
+    "project_id": "drivex-2a34e",
+    "storage_bucket": "drivex-2a34e.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:433045774465:android:fceba2befc1b15e644ed80",
+        "android_client_info": {
+          "package_name": "com.example.drivex"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "433045774465-su9lf1dheubj5ubmddis3ldeju561v1d.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCRJ7DGobw4KC9yonpfIQ_RzxNIEG0qjVI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "433045774465-su9lf1dheubj5ubmddis3ldeju561v1d.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
