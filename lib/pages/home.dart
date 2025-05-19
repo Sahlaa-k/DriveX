@@ -55,9 +55,10 @@ class _HomeState extends State<Home> {
                       children: [
                         Text(
                           'DriveX',
-                          style: GoogleFonts.inika(color: Colors.white,fontSize: width*.06,
-                          fontWeight: FontWeight.w500
-                          ),
+                          style: GoogleFonts.inika(
+                              color: Colors.white,
+                              fontSize: width * .06,
+                              fontWeight: FontWeight.w500),
                         ),
                         Container(
                           height: width * .1,
@@ -77,7 +78,7 @@ class _HomeState extends State<Home> {
                     ),
                     SizedBox(height: height * .065),
                     SizedBox(
-                      height: height*.06,
+                      height: height * .06,
                       child: TextFormField(
                         decoration: InputDecoration(
                           hintText: 'Search here...',
@@ -103,7 +104,79 @@ class _HomeState extends State<Home> {
                 ),
               ),
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: 20),
+            ListView.builder(
+              itemCount: 10,
+              padding: EdgeInsets.zero,
+              shrinkWrap: true,
+              physics: NeverScrollableScrollPhysics(),
+              // scrollDirection: Axis.vertical,
+              itemBuilder: (context, index) {
+                return Container(
+                  height: width * .3,
+                  width: 80,
+                  // color: Colors.black45,
+                  decoration: BoxDecoration(
+                    border: Border.all(),
+                  ),
+                  child: Column(
+                    // mainAxisSize: MainAxisSize.min,
+                    children: [
+                      
+                              //     ListView.builder(
+                              //   itemCount: 2,
+                              //   padding: EdgeInsets.zero,
+                              //   shrinkWrap: true,
+                              //   physics: NeverScrollableScrollPhysics(),
+                              //   scrollDirection: Axis.horizontal,
+                              //   itemBuilder: (context, index) {
+                              //   return Container(
+                              //     height: 20,
+                              //     width: 10,
+                              //     // color: Colors.black45,
+                              //     decoration: BoxDecoration(
+                              //       border: Border.all(),
+                              //       color: Colors.black26
+                              //     ),
+                              //     child: Text(" h"),
+                      
+                              //   );
+                              //  },),
+
+
+                              SizedBox(
+                                height: 30,
+                                // width: width*1,
+                                child: ListView.builder(
+                                                    padding: EdgeInsets.all(0),
+                                                    scrollDirection: Axis.horizontal,
+                                                    physics: NeverScrollableScrollPhysics(),
+                                                    shrinkWrap: true,
+                                                    itemCount: 3,
+                                                    itemBuilder: (context, index) {
+                                                      return Padding(
+                                                        padding: const EdgeInsets.all(5),
+                                                        child: Container(
+                                                          height: 20,
+                                                          decoration: BoxDecoration(
+                                                                                            border: Border.all(),
+                                                                                            color: Colors.black26
+                                                                                          ),
+                                                          child: Text("hh",style: GoogleFonts.poppins(fontSize: 10,color: Colors.black45),)),
+                                                      );
+                                                    },
+                                                  ),
+                              )
+                      // Container(
+                              //   height: 20,
+                              //   width: 20,
+                              //   color: Colors.black,
+                              // )
+                    ],
+                  ),
+                );
+              },
+            ),
             ...drivers.map((driver) {
               return Padding(
                 padding:
