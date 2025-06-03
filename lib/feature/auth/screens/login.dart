@@ -1,6 +1,7 @@
 import 'package:drivex/core/constants/color_constant.dart';
 import 'package:drivex/core/constants/localVariables.dart';
 import 'package:drivex/feature/auth/screens/signUp.dart';
+import 'package:drivex/feature/bottomNavigation/bottomnavigation.dart';
 import 'package:drivex/feature/onboarding/animatedLogo2.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -249,23 +250,33 @@ class _LoginPageState extends State<LoginPage> {
                   SizedBox(
                     height: height * 0.05,
                   ),
-                  Container(
-                    height: height * 0.05,
-                    width: width * 0.42,
-                    margin: EdgeInsets.all(width * 0.03),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.all(
-                        Radius.circular(width * 0.025),
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.pushAndRemoveUntil(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => BottomNavigation(),
+                          ),
+                              (route) => false);
+                    },
+                    child: Container(
+                      height: height * 0.05,
+                      width: width * 0.42,
+                      margin: EdgeInsets.all(width * 0.03),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.all(
+                          Radius.circular(width * 0.025),
+                        ),
+                        color: ColorConstant.primaryColor,
                       ),
-                      color: ColorConstant.primaryColor,
-                    ),
-                    child: Center(
-                      child: Text(
-                        " Login",
-                        style: TextStyle(
-                            color: ColorConstant.backgroundColor,
-                            fontSize: width * 0.04,
-                            fontWeight: FontWeight.w700),
+                      child: Center(
+                        child: Text(
+                          " Login",
+                          style: TextStyle(
+                              color: ColorConstant.backgroundColor,
+                              fontSize: width * 0.04,
+                              fontWeight: FontWeight.w700),
+                        ),
                       ),
                     ),
                   ),

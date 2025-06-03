@@ -1,7 +1,7 @@
 import 'package:drivex/core/constants/color_constant.dart';
 import 'package:drivex/core/constants/localVariables.dart';
 import 'package:drivex/feature/auth/screens/login.dart';
-import 'package:drivex/pages/home.dart';
+import 'package:drivex/feature/bottomNavigation/bottomnavigation.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -277,7 +277,7 @@ class _SignUpPageState extends State<SignUpPage> {
                         Navigator.pushAndRemoveUntil(
                           context,
                           CupertinoPageRoute(
-                            builder: (context) => Home(),
+                            builder: (context) => BottomNavigation(),
                           ),
                           (route) => false,
                         );
