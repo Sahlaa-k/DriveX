@@ -30,7 +30,7 @@ class _RequestpageState extends State<Requestpage> {
                 width: width*1,
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.only(topLeft: Radius.circular(width*.2),topRight: Radius.circular(width*.2)),
+                  borderRadius: BorderRadius.only(topLeft: Radius.circular(width*.15),topRight: Radius.circular(width*.15)),
                   // border: Border.all()
                 ),
                 child: Column(

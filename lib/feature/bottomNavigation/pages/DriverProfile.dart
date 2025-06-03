@@ -2,182 +2,577 @@ import 'package:flutter/material.dart';
 import 'package:drivex/core/constants/color_constant.dart';
 
 class DriverProfilePage extends StatelessWidget {
-  const DriverProfilePage({super.key});
+  final Map<String, dynamic> driver;
+  const DriverProfilePage({super.key, required this.driver});
 
   @override
   Widget build(BuildContext context) {
+    final List<String> languages = [
+      'English',
+      'Hindi',
+      'Spanish',
+      'French',
+      'Arabic',
+      'Mandarin',
+      'Russian',
+      'Tamil',
+      'German',
+      'Japanese',
+      'Korean',
+      'Malayalam',
+    ];
+
+    final List<Map<String, String>> data = [
+      {'Name': 'Rating', 'Age': '25',},
+      {'Name': 'Asha', 'Age': '30',},
+      {'Name': 'Carlos', 'Age': '28',},
+      {'Name': 'Mina', 'Age': '22',},
+    ];
+    final List<String> columns = ['Name', 'Age',];
+
     double width = MediaQuery.of(context).size.width;
     double height = MediaQuery.of(context).size.height;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF3F7FA),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            Stack(
+      // backgroundColor: const Color(0xFFF3F7FA),
+      body: Container(
+        height: height * 1,
+        width: width * 1,
+        decoration: BoxDecoration(
+          // color: ColorConstant.secondaryColor.withOpacity(0.2),
+          // borderRadius: BorderRadius.only(
+          // topRight: Radius.circular(width * 0.075),
+          // bottomLeft: Radius.circular(width * 0.075)
+          // bottomRight: Radius.circular(width * 0.4),
+          // topLeft: Radius.circular(width * 0.4),
+          // ),
+          // shape: BoxShape.circle,
+          gradient: LinearGradient(
+            colors: [
+              // ColorConstant.secondaryColor,
+              ColorConstant.primaryColor,
+              ColorConstant.secondaryColor,
+              // Colors.blue.shade100,
+              Colors.white,
+              Colors.white,
+            ],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            // stops: [0.4, 0.8],
+          ),
+        ),
+        child: SingleChildScrollView(
+          child: SafeArea(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Container(
-                  height: height * 0.4,
-                  width: double.infinity,
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Colors.lightBlueAccent, Colors.blue],
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                    ),
-                    borderRadius:
-                        BorderRadius.vertical(bottom: Radius.circular(30)),
-                  ),
-                ),
-                Positioned(
-                  top: height * 0.08,
-                  left: 20,
-                  child: GestureDetector(
-                    onTap: () => Navigator.pop(context),
-                    child: const Icon(Icons.arrow_back_ios, color: Colors.white),
-                  ),
-                ),
-                Positioned(
-                  top: height * 0.08,
-                  right: 20,
-                  child: const Icon(Icons.favorite_border, color: Colors.white),
-                ),
-                Column(
+                // SizedBox(height: 100,),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    SizedBox(height: height * 0.12),
-                    CircleAvatar(
-                      radius: 50,
-                      backgroundImage:
-                          const NetworkImage("https://i.pravatar.cc/150?img=12"),
-                    ),
-                    const SizedBox(height: 10),
-                    const Text(
-                      "Ravi Kumar",
-                      style: TextStyle(
+                    GestureDetector(
+                        onTap: () {
+                          // Navigator.pop(context);
+                          print(driver);
+                        },
+                        child: SizedBox(
+                            height: width * .15,
+                            width: width * .15,
+                            child: Icon(
+                              Icons.arrow_back_ios_rounded,
+                              size: width * .08,
+                              color: Colors.white,
+                            ))),
+                    SizedBox(
+                        height: width * .15,
+                        width: width * .15,
+                        child: Icon(
+                          Icons.favorite_border_rounded,
+                          size: width * .08,
                           color: Colors.white,
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold),
-                    ),
-                    const Text(
-                      "Professional Driver",
-                      style: TextStyle(color: Colors.white70, fontSize: 14),
-                    ),
-                    const SizedBox(height: 20),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 40),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        )),
+                  ],
+                ),
+                SizedBox(
+                  height: width * .1,
+                ),
+                CircleAvatar(
+                    radius: width * .15,
+                    backgroundImage: NetworkImage(driver['image'])),
+                SizedBox(
+                  height: width * .05,
+                ),
+                Container(
+                  width: width * .9,
+                  // height: width*1.9,
+                  decoration: BoxDecoration(
+                      // border: Border.all(color: ColorConstant.primaryColor.withOpacity(.5),width: width*.006),
+                      // color: Colors.black.withOpacity(.25),
+                      color: Colors.white,
+                      borderRadius:
+                          BorderRadius.all(Radius.circular(width * .05))),
+                  child: Column(
+                    children: [
+                      SizedBox(
+                        height: width * .05,
+                      ),
+                      Text(driver['name'],
+                          style: TextStyle(
+                              fontSize: width * .045,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black.withOpacity(.75))),
+                      Text(
+                        '#Driver Code',
+                        style: TextStyle(
+                            fontSize: width * .035,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black.withOpacity(.5)),
+                      ),
+                      Container(
+                          height: width * .058,
+                          width: width * .3,
+                          decoration: BoxDecoration(
+                              // border: Border.all(),
+                              borderRadius:
+                                  BorderRadius.circular(width * .015),
+                              color: Colors.black.withOpacity(.2)),
+                          child: Center(
+                            child: Padding(
+                              padding: EdgeInsets.only(
+                                  left: width * .01, right: width * .01),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.circle_rounded,
+                                      size: width * .025,
+                                      color: Colors.redAccent),
+                                  SizedBox(width: width * .01),
+                                  Text('Not Available'.toString(),
+                                      style:
+                                          TextStyle(fontSize: width * .03)),
+                                  // Text('${driver['rating']} ★')
+                                ],
+                              ),
+                            ),
+                          )),
+                      SizedBox(
+                        height: width * .025,
+                      ),
+                      Container(
+                          height: width * .058,
+                          width: width * .3,
+                          decoration: BoxDecoration(
+                              border: Border.all(),
+                              borderRadius:
+                                  BorderRadius.circular(width * .015),
+                              color: Colors.white),
+                          child: Center(
+                            child: Padding(
+                              padding: EdgeInsets.only(
+                                  left: width * .01, right: width * .01),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.circle_rounded,
+                                      size: width * .025,
+                                      color: Colors.redAccent),
+                                  SizedBox(width: width * .01),
+                                  Text('rating details'.toString(),
+                                      style:
+                                          TextStyle(fontSize: width * .03)),
+                                  // Text('${driver['rating']} ★')
+                                ],
+                              ),
+                            ),
+                          )),
+                      SizedBox(
+                        height: width * .025,
+                      ),
+                      Container(
+                          // height: width * .058,
+                          width: width * .8,
+                          decoration: BoxDecoration(
+                              border: Border.all(
+                                color: ColorConstant.primaryColor
+                                    .withOpacity(.5),
+                                width: width * .004,
+                              ),
+                              borderRadius:
+                                  BorderRadius.circular(width * .015),
+                              color: Colors.white),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Padding(
+                                padding: EdgeInsets.all(width * .015),
+                                child: Container(
+                                    height: width * .058,
+                                    width: width * .2,
+                                    decoration: BoxDecoration(
+                                        // border: Border.all(),
+                                        borderRadius: BorderRadius.circular(
+                                            width * .015),
+                                        color: Colors.black.withOpacity(.2)),
+                                    child: Center(
+                                      child: Padding(
+                                        padding: EdgeInsets.only(
+                                            left: width * .01,
+                                            right: width * .01),
+                                        child: Text(
+                                          "Bio",
+                                          style: TextStyle(
+                                              fontWeight: FontWeight.w600,
+                                              color: Colors.black
+                                                  .withOpacity(.75)),
+                                        ),
+                                      ),
+                                    )),
+                              ),
+                              Padding(
+                                padding: EdgeInsets.all(width * .015),
+                                child: Column(
+                                  children: [
+                                    Text(driver['bio']),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          )),
+                      SizedBox(
+                        height: width * .025,
+                      ),
+                      // ListView.builder(
+                      //   itemCount: data.length,
+                      //   shrinkWrap: true,
+                      //   physics: NeverScrollableScrollPhysics(),
+                      //   itemBuilder: (context, rowIndex) {
+                      //     return Row(
+                      //       children: columns.map((col) {
+                      //         return Expanded(
+                      //           child: Container(
+                      //             padding: EdgeInsets.all(8),
+                      //             margin: EdgeInsets.only(bottom: 4),
+                      //             decoration: BoxDecoration(
+                      //               color: Colors.blue.shade50,
+                      //               border: Border.all(
+                      //                   color: Colors.grey.shade300),
+                      //             ),
+                      //             child: Text(data[rowIndex][col] ?? ''),
+                      //           ),
+                      //         );
+                      //       }).toList(),
+                      //     );
+                      //   },
+                      // ),
+      
+                      Container(
+                          // height: width * .058,
+                          width: width * .8,
+                          decoration: BoxDecoration(
+                              border: Border.all(
+                                color: ColorConstant.primaryColor
+                                    .withOpacity(.5),
+                                width: width * .004,
+                              ),
+                              borderRadius:
+                                  BorderRadius.circular(width * .015),
+                              color: Colors.white),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Padding(
+                              //   padding: EdgeInsets.all(width * .015),
+                              //   child: Container(
+                              //       height: width * .058,
+                              //       width: width * .25,
+                              //       decoration: BoxDecoration(
+                              //           // border: Border.all(),
+                              //           borderRadius: BorderRadius.circular(
+                              //               width * .015),
+                              //           color: Colors.black.withOpacity(.2)),
+                              //       child: Center(
+                              //         child: Padding(
+                              //           padding: EdgeInsets.only(
+                              //               left: width * .01,
+                              //               right: width * .01),
+                              //           child: Text(
+                              //             "Language",
+                              //             style: TextStyle(
+                              //                 fontWeight: FontWeight.w600,
+                              //                 color: Colors.black
+                              //                     .withOpacity(.75)),
+                              //           ),
+                              //         ),
+                              //       )),
+                              // ),
+                              SizedBox(
+                                // width: width * 0.8,
+                                // height: width*.56,
+                                child: GridView.builder(
+                                  shrinkWrap: true,
+                                  physics: NeverScrollableScrollPhysics(),
+                                  padding: EdgeInsets.only(
+                                      top: width * .02,
+                                      right: width * .02,
+                                      left: width * .02,
+                                      bottom: width * .02),
+                                  gridDelegate:
+                                      SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: 1, // 2 items per row
+                                    crossAxisSpacing:
+                                        10, // space between columns
+                                    mainAxisSpacing: 10, // space between rows
+                                    childAspectRatio: width*.025, // width/height ratio
+                                  ),
+                                  itemCount: driver.length,
+                                  itemBuilder: (context, index) {
+                                    return Row(mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Container(
+                                          width: width*.37,
+                                          decoration: BoxDecoration(
+                                            color: Colors.blue.shade100,
+                                            borderRadius: BorderRadius.circular(
+                                                width * .015),
+                                          ),
+                                          alignment: Alignment.center,
+                                          child: Text(
+                                            driver.keys.toList()[index].toString(),
+                                            style: TextStyle(
+                                                fontSize: width * .0325),
+                                          ),
+                                          
+                                        ),
+                                        Container(
+                                          width: width*.37,
+                                      decoration: BoxDecoration(
+                                        color: Colors.blue.shade100,
+                                        borderRadius: BorderRadius.circular(
+                                            width * .015),
+                                      ),
+                                      alignment: Alignment.center,
+                                      child: Text(
+                                        driver.values.toList()[index].toString(),
+                                        style: TextStyle(
+                                            fontSize: width * .0325),
+                                      ),
+                                    )
+                                      ],
+                                    );
+                                  },
+                                ),
+                              ),
+                            ],
+                          )),
+      
+      
+                      
+                      SizedBox(
+                        height: width * .025,
+                      ),
+                       Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
-                          // _iconCircle(Icons.info_outline, "Details"),
-                          // _iconCircle(Icons.phone, "Call"),
-                          // _iconCircle(Icons.message, "Chat"),
-                          // _iconCircle(Icons.car_rental, "Book"),
+                          Container(
+                              height: width * .2,
+                              width: width * .2,
+                              decoration: BoxDecoration(
+                                  border: Border.all(
+                                    color: ColorConstant.primaryColor
+                                        .withOpacity(.5),
+                                    width: width * .004,
+                                  ),
+                                  borderRadius:
+                                      BorderRadius.circular(width * .015),
+                                  color: Colors.white),
+                              child: Padding(
+                                padding: EdgeInsets.only(
+                                    left: width * .01, right: width * .01),
+                                child: Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.center,
+                                  // mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                  children: [
+                                    SizedBox(
+                                      height: width * .01,
+                                    ),
+                                    Text('Rating',
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.w600,
+                                            color: Colors.black
+                                                .withOpacity(.75))),
+                                    SizedBox(
+                                      height: width * .01,
+                                    ),
+                                    Text('${driver['rating']}★'),
+                                  ],
+                                ),
+                              )),
+                          Container(
+                              height: width * .2,
+                              width: width * .2,
+                              decoration: BoxDecoration(
+                                  border: Border.all(
+                                    color: ColorConstant.primaryColor
+                                        .withOpacity(.5),
+                                    width: width * .004,
+                                  ),
+                                  borderRadius:
+                                      BorderRadius.circular(width * .015),
+                                  color: Colors.white),
+                              child: Padding(
+                                padding: EdgeInsets.only(
+                                    left: width * .01, right: width * .01),
+                                child: Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.center,
+                                  // mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                  children: [
+                                    SizedBox(
+                                      height: width * .01,
+                                    ),
+                                    Text('Likes',
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.w600,
+                                            color: Colors.black
+                                                .withOpacity(.75))),
+                                    SizedBox(
+                                      height: width * .01,
+                                    ),
+                                    Text('1.4 k'),
+                                  ],
+                                ),
+                              )),
+                          Container(
+                              height: width * .2,
+                              width: width * .2,
+                              decoration: BoxDecoration(
+                                  border: Border.all(
+                                    color: ColorConstant.primaryColor
+                                        .withOpacity(.5),
+                                    width: width * .004,
+                                  ),
+                                  borderRadius:
+                                      BorderRadius.circular(width * .015),
+                                  color: Colors.white),
+                              child: Padding(
+                                padding: EdgeInsets.only(
+                                    left: width * .01, right: width * .01),
+                                child: Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.center,
+                                  // mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                  children: [
+                                    SizedBox(
+                                      height: width * .01,
+                                    ),
+                                    Text('Dislikes',
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.w600,
+                                            color: Colors.black
+                                                .withOpacity(.75))),
+                                    SizedBox(
+                                      height: width * .01,
+                                    ),
+                                    Text('6'),
+                                  ],
+                                ),
+                              ))
                         ],
                       ),
-                    )
-                  ],
-                )
+                      SizedBox(
+                        height: width * .025,
+                      ),
+                      Container(
+                          // height: width * .058,
+                          width: width * .8,
+                          decoration: BoxDecoration(
+                              border: Border.all(
+                                color: ColorConstant.primaryColor
+                                    .withOpacity(.5),
+                                width: width * .004,
+                              ),
+                              borderRadius:
+                                  BorderRadius.circular(width * .015),
+                              color: Colors.white),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Padding(
+                                padding: EdgeInsets.all(width * .015),
+                                child: Container(
+                                    height: width * .058,
+                                    width: width * .25,
+                                    decoration: BoxDecoration(
+                                        // border: Border.all(),
+                                        borderRadius: BorderRadius.circular(
+                                            width * .015),
+                                        color: Colors.black.withOpacity(.2)),
+                                    child: Center(
+                                      child: Padding(
+                                        padding: EdgeInsets.only(
+                                            left: width * .01,
+                                            right: width * .01),
+                                        child: Text(
+                                          "Language",
+                                          style: TextStyle(
+                                              fontWeight: FontWeight.w600,
+                                              color: Colors.black
+                                                  .withOpacity(.75)),
+                                        ),
+                                      ),
+                                    )),
+                              ),
+                              SizedBox(
+                                // width: width * 0.8,
+                                // height: width*.56,
+                                child: GridView.builder(
+                                  shrinkWrap: true,
+                                  physics: NeverScrollableScrollPhysics(),
+                                  padding: EdgeInsets.only(
+                                      right: width * .02,
+                                      left: width * .02,
+                                      bottom: width * .02),
+                                  gridDelegate:
+                                      SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: 2, // 2 items per row
+                                    crossAxisSpacing:
+                                        10, // space between columns
+                                    mainAxisSpacing: 10, // space between rows
+                                    childAspectRatio: width*.0125, // width/height ratio
+                                  ),
+                                  itemCount: languages.length,
+                                  itemBuilder: (context, index) {
+                                    return Container(
+                                      decoration: BoxDecoration(
+                                        color: Colors.blue.shade100,
+                                        borderRadius: BorderRadius.circular(
+                                            width * .015),
+                                      ),
+                                      alignment: Alignment.center,
+                                      child: Text(
+                                        languages[index],
+                                        style: TextStyle(
+                                            fontSize: width * .0325),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
+                            ],
+                          )),
+                    ],
+                  ),
+                ),
               ],
             ),
-            const SizedBox(height: 20),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 25.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  // _infoTile("Experience", "5+ Years"),
-                  // _infoTile("Rating", "⭐ 4.8"),
-                  // _infoTile("Comfort", "High"),
-                ],
-              ),
-            ),
-            const SizedBox(height: 25),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 25),
-              child: Column(
-                children: [
-                  // _profileDetailTile("Vehicle Types", "Cars, Bikes"),
-                  // _profileDetailTile("Transmission", "Manual & Automatic"),
-                  // _profileDetailTile("Speed Avg", "55-60 km/h"),
-                  // _profileDetailTile("Languages", "English, Hindi"),
-                  // _profileDetailTile("Availability", "Full Day / Part Time"),
-                ],
-              ),
-            ),
-            const SizedBox(height: 25),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 25),
-              child: ElevatedButton(
-                onPressed: () {},
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: ColorConstant.primaryColor,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                  minimumSize: Size(double.infinity, 55),
-                ),
-                child: const Text("Hire Driver", style: TextStyle(fontSize: 18)),
-              ),
-            ),
-            const SizedBox(height: 30)
-          ],
+          ),
         ),
       ),
     );
   }
-
-//   Widget _iconCircle(IconData icon, String label) {
-//     return Column(
-//       children: [
-//         CircleAvatar(
-//           radius: 24,
-//           backgroundColor: Colors.white,
-//           child: Icon(icon, color: Colors.blueAccent),
-//         ),
-//         const SizedBox(height: 6),
-//         Text(label, style: const TextStyle(fontSize: 12)),
-//       ],
-//     );
-//   }
-
-//   Widget _infoTile(String title, String subtitle) {
-//     return Container(
-//       padding: const EdgeInsets.all(10),
-//       width: 100,
-//       decoration: BoxDecoration(
-//         color: Colors.white,
-//         borderRadius: BorderRadius.circular(16),
-//         border: Border.all(color: ColorConstant.primaryColor.withOpacity(.5)),
-//       ),
-//       child: Column(
-//         children: [
-//           Text(subtitle,
-//               style: const TextStyle(
-//                   fontSize: 14, fontWeight: FontWeight.bold)),
-//           const SizedBox(height: 4),
-//           Text(title, style: const TextStyle(fontSize: 12, color: Colors.black54))
-//         ],
-//       ),
-//     );
-//   }
-
-//   Widget _profileDetailTile(String title, String value) {
-//     return Padding(
-//       padding: const EdgeInsets.only(bottom: 12),
-//       child: Row(
-//         children: [
-//           Expanded(
-//             child: Text(
-//               title,
-//               style: const TextStyle(fontSize: 16, color: Colors.black87),
-//             ),
-//           ),
-//           Text(
-//             value,
-//             style: const TextStyle(
-//                 fontWeight: FontWeight.w600, fontSize: 16, color: Colors.black),
-//           )
-//         ],
-//       ),
-//     );
-//   }
 }
