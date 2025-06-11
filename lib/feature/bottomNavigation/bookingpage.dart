@@ -12,7 +12,20 @@ class _BookingPagesState extends State<BookingPages> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: ColorConstant.secondaryColor,
+      backgroundColor: ColorConstant.backgroundColor,
+      appBar: AppBar(
+        title: Center(
+          child: Text("Bookings",style: TextStyle(color: ColorConstant.thirdColor,fontWeight: FontWeight.w700),
+          ),
+        ),
+        backgroundColor: ColorConstant.backgroundColor,
+      ),
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+          ],
+        ),
+      ),
     );
   }
 }

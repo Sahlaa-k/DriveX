@@ -1,7 +1,8 @@
 import 'package:drivex/core/constants/color_constant.dart';
 import 'package:drivex/core/constants/localVariables.dart';
-import 'package:drivex/pages/DriverProfile.dart';
-import 'package:drivex/pages/RequestPage.dart';
+import 'package:drivex/feature/bottomNavigation/pages/DriverProfile.dart';
+import 'package:drivex/feature/bottomNavigation/pages/RequestPage.dart';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -348,7 +349,7 @@ class _HomeState extends State<Home> {
                                   //       );
                                   //     },
                                   //   ),
-                                  // )
+
                                   // Container(
                                   //   height: 20,
                                   //   width: 20,
