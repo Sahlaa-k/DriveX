@@ -23,12 +23,27 @@ class DriverProfilePage extends StatelessWidget {
     ];
 
     final List<Map<String, String>> data = [
-      {'Name': 'Rating', 'Age': '25',},
-      {'Name': 'Asha', 'Age': '30',},
-      {'Name': 'Carlos', 'Age': '28',},
-      {'Name': 'Mina', 'Age': '22',},
+      {
+        'Name': 'Rating',
+        'Age': '25',
+      },
+      {
+        'Name': 'Asha',
+        'Age': '30',
+      },
+      {
+        'Name': 'Carlos',
+        'Age': '28',
+      },
+      {
+        'Name': 'Mina',
+        'Age': '22',
+      },
     ];
-    final List<String> columns = ['Name', 'Age',];
+    final List<String> columns = [
+      'Name',
+      'Age',
+    ];
 
     double width = MediaQuery.of(context).size.width;
     double height = MediaQuery.of(context).size.height;
@@ -39,14 +54,6 @@ class DriverProfilePage extends StatelessWidget {
         height: height * 1,
         width: width * 1,
         decoration: BoxDecoration(
-          // color: ColorConstant.secondaryColor.withOpacity(0.2),
-          // borderRadius: BorderRadius.only(
-          // topRight: Radius.circular(width * 0.075),
-          // bottomLeft: Radius.circular(width * 0.075)
-          // bottomRight: Radius.circular(width * 0.4),
-          // topLeft: Radius.circular(width * 0.4),
-          // ),
-          // shape: BoxShape.circle,
           gradient: LinearGradient(
             colors: [
               // ColorConstant.secondaryColor,
@@ -106,8 +113,6 @@ class DriverProfilePage extends StatelessWidget {
                   width: width * .9,
                   // height: width*1.9,
                   decoration: BoxDecoration(
-                      // border: Border.all(color: ColorConstant.primaryColor.withOpacity(.5),width: width*.006),
-                      // color: Colors.black.withOpacity(.25),
                       color: Colors.white,
                       borderRadius:
                           BorderRadius.all(Radius.circular(width * .05))),
@@ -133,8 +138,7 @@ class DriverProfilePage extends StatelessWidget {
                           width: width * .3,
                           decoration: BoxDecoration(
                               // border: Border.all(),
-                              borderRadius:
-                                  BorderRadius.circular(width * .015),
+                              borderRadius: BorderRadius.circular(width * .015),
                               color: Colors.black.withOpacity(.2)),
                           child: Center(
                             child: Padding(
@@ -150,8 +154,7 @@ class DriverProfilePage extends StatelessWidget {
                                       color: Colors.redAccent),
                                   SizedBox(width: width * .01),
                                   Text('Not Available'.toString(),
-                                      style:
-                                          TextStyle(fontSize: width * .03)),
+                                      style: TextStyle(fontSize: width * .03)),
                                   // Text('${driver['rating']} ★')
                                 ],
                               ),
@@ -165,8 +168,7 @@ class DriverProfilePage extends StatelessWidget {
                           width: width * .3,
                           decoration: BoxDecoration(
                               border: Border.all(),
-                              borderRadius:
-                                  BorderRadius.circular(width * .015),
+                              borderRadius: BorderRadius.circular(width * .015),
                               color: Colors.white),
                           child: Center(
                             child: Padding(
@@ -182,8 +184,7 @@ class DriverProfilePage extends StatelessWidget {
                                       color: Colors.redAccent),
                                   SizedBox(width: width * .01),
                                   Text('rating details'.toString(),
-                                      style:
-                                          TextStyle(fontSize: width * .03)),
+                                      style: TextStyle(fontSize: width * .03)),
                                   // Text('${driver['rating']} ★')
                                 ],
                               ),
@@ -197,12 +198,11 @@ class DriverProfilePage extends StatelessWidget {
                           width: width * .8,
                           decoration: BoxDecoration(
                               border: Border.all(
-                                color: ColorConstant.primaryColor
-                                    .withOpacity(.5),
+                                color:
+                                    ColorConstant.primaryColor.withOpacity(.5),
                                 width: width * .004,
                               ),
-                              borderRadius:
-                                  BorderRadius.circular(width * .015),
+                              borderRadius: BorderRadius.circular(width * .015),
                               color: Colors.white),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -214,8 +214,8 @@ class DriverProfilePage extends StatelessWidget {
                                     width: width * .2,
                                     decoration: BoxDecoration(
                                         // border: Border.all(),
-                                        borderRadius: BorderRadius.circular(
-                                            width * .015),
+                                        borderRadius:
+                                            BorderRadius.circular(width * .015),
                                         color: Colors.black.withOpacity(.2)),
                                     child: Center(
                                       child: Padding(
@@ -245,70 +245,20 @@ class DriverProfilePage extends StatelessWidget {
                       SizedBox(
                         height: width * .025,
                       ),
-                      // ListView.builder(
-                      //   itemCount: data.length,
-                      //   shrinkWrap: true,
-                      //   physics: NeverScrollableScrollPhysics(),
-                      //   itemBuilder: (context, rowIndex) {
-                      //     return Row(
-                      //       children: columns.map((col) {
-                      //         return Expanded(
-                      //           child: Container(
-                      //             padding: EdgeInsets.all(8),
-                      //             margin: EdgeInsets.only(bottom: 4),
-                      //             decoration: BoxDecoration(
-                      //               color: Colors.blue.shade50,
-                      //               border: Border.all(
-                      //                   color: Colors.grey.shade300),
-                      //             ),
-                      //             child: Text(data[rowIndex][col] ?? ''),
-                      //           ),
-                      //         );
-                      //       }).toList(),
-                      //     );
-                      //   },
-                      // ),
-      
                       Container(
                           // height: width * .058,
                           width: width * .8,
                           decoration: BoxDecoration(
                               border: Border.all(
-                                color: ColorConstant.primaryColor
-                                    .withOpacity(.5),
+                                color:
+                                    ColorConstant.primaryColor.withOpacity(.5),
                                 width: width * .004,
                               ),
-                              borderRadius:
-                                  BorderRadius.circular(width * .015),
+                              borderRadius: BorderRadius.circular(width * .015),
                               color: Colors.white),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              // Padding(
-                              //   padding: EdgeInsets.all(width * .015),
-                              //   child: Container(
-                              //       height: width * .058,
-                              //       width: width * .25,
-                              //       decoration: BoxDecoration(
-                              //           // border: Border.all(),
-                              //           borderRadius: BorderRadius.circular(
-                              //               width * .015),
-                              //           color: Colors.black.withOpacity(.2)),
-                              //       child: Center(
-                              //         child: Padding(
-                              //           padding: EdgeInsets.only(
-                              //               left: width * .01,
-                              //               right: width * .01),
-                              //           child: Text(
-                              //             "Language",
-                              //             style: TextStyle(
-                              //                 fontWeight: FontWeight.w600,
-                              //                 color: Colors.black
-                              //                     .withOpacity(.75)),
-                              //           ),
-                              //         ),
-                              //       )),
-                              // ),
                               SizedBox(
                                 // width: width * 0.8,
                                 // height: width*.56,
@@ -326,14 +276,17 @@ class DriverProfilePage extends StatelessWidget {
                                     crossAxisSpacing:
                                         10, // space between columns
                                     mainAxisSpacing: 10, // space between rows
-                                    childAspectRatio: width*.025, // width/height ratio
+                                    childAspectRatio:
+                                        width * .025, // width/height ratio
                                   ),
                                   itemCount: driver.length,
                                   itemBuilder: (context, index) {
-                                    return Row(mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    return Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
                                       children: [
                                         Container(
-                                          width: width*.37,
+                                          width: width * .37,
                                           decoration: BoxDecoration(
                                             color: Colors.blue.shade100,
                                             borderRadius: BorderRadius.circular(
@@ -341,26 +294,29 @@ class DriverProfilePage extends StatelessWidget {
                                           ),
                                           alignment: Alignment.center,
                                           child: Text(
-                                            driver.keys.toList()[index].toString(),
+                                            driver.keys
+                                                .toList()[index]
+                                                .toString(),
                                             style: TextStyle(
                                                 fontSize: width * .0325),
                                           ),
-                                          
                                         ),
                                         Container(
-                                          width: width*.37,
-                                      decoration: BoxDecoration(
-                                        color: Colors.blue.shade100,
-                                        borderRadius: BorderRadius.circular(
-                                            width * .015),
-                                      ),
-                                      alignment: Alignment.center,
-                                      child: Text(
-                                        driver.values.toList()[index].toString(),
-                                        style: TextStyle(
-                                            fontSize: width * .0325),
-                                      ),
-                                    )
+                                          width: width * .37,
+                                          decoration: BoxDecoration(
+                                            color: Colors.blue.shade100,
+                                            borderRadius: BorderRadius.circular(
+                                                width * .015),
+                                          ),
+                                          alignment: Alignment.center,
+                                          child: Text(
+                                            driver.values
+                                                .toList()[index]
+                                                .toString(),
+                                            style: TextStyle(
+                                                fontSize: width * .0325),
+                                          ),
+                                        )
                                       ],
                                     );
                                   },
@@ -368,13 +324,10 @@ class DriverProfilePage extends StatelessWidget {
                               ),
                             ],
                           )),
-      
-      
-                      
                       SizedBox(
                         height: width * .025,
                       ),
-                       Row(
+                      Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
                           Container(
@@ -393,8 +346,7 @@ class DriverProfilePage extends StatelessWidget {
                                 padding: EdgeInsets.only(
                                     left: width * .01, right: width * .01),
                                 child: Column(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
                                   // mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                                   children: [
                                     SizedBox(
@@ -403,8 +355,8 @@ class DriverProfilePage extends StatelessWidget {
                                     Text('Rating',
                                         style: TextStyle(
                                             fontWeight: FontWeight.w600,
-                                            color: Colors.black
-                                                .withOpacity(.75))),
+                                            color:
+                                                Colors.black.withOpacity(.75))),
                                     SizedBox(
                                       height: width * .01,
                                     ),
@@ -428,8 +380,7 @@ class DriverProfilePage extends StatelessWidget {
                                 padding: EdgeInsets.only(
                                     left: width * .01, right: width * .01),
                                 child: Column(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
                                   // mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                                   children: [
                                     SizedBox(
@@ -438,8 +389,8 @@ class DriverProfilePage extends StatelessWidget {
                                     Text('Likes',
                                         style: TextStyle(
                                             fontWeight: FontWeight.w600,
-                                            color: Colors.black
-                                                .withOpacity(.75))),
+                                            color:
+                                                Colors.black.withOpacity(.75))),
                                     SizedBox(
                                       height: width * .01,
                                     ),
@@ -463,8 +414,7 @@ class DriverProfilePage extends StatelessWidget {
                                 padding: EdgeInsets.only(
                                     left: width * .01, right: width * .01),
                                 child: Column(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
                                   // mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                                   children: [
                                     SizedBox(
@@ -473,8 +423,8 @@ class DriverProfilePage extends StatelessWidget {
                                     Text('Dislikes',
                                         style: TextStyle(
                                             fontWeight: FontWeight.w600,
-                                            color: Colors.black
-                                                .withOpacity(.75))),
+                                            color:
+                                                Colors.black.withOpacity(.75))),
                                     SizedBox(
                                       height: width * .01,
                                     ),
@@ -492,12 +442,11 @@ class DriverProfilePage extends StatelessWidget {
                           width: width * .8,
                           decoration: BoxDecoration(
                               border: Border.all(
-                                color: ColorConstant.primaryColor
-                                    .withOpacity(.5),
+                                color:
+                                    ColorConstant.primaryColor.withOpacity(.5),
                                 width: width * .004,
                               ),
-                              borderRadius:
-                                  BorderRadius.circular(width * .015),
+                              borderRadius: BorderRadius.circular(width * .015),
                               color: Colors.white),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -509,8 +458,8 @@ class DriverProfilePage extends StatelessWidget {
                                     width: width * .25,
                                     decoration: BoxDecoration(
                                         // border: Border.all(),
-                                        borderRadius: BorderRadius.circular(
-                                            width * .015),
+                                        borderRadius:
+                                            BorderRadius.circular(width * .015),
                                         color: Colors.black.withOpacity(.2)),
                                     child: Center(
                                       child: Padding(
@@ -543,21 +492,22 @@ class DriverProfilePage extends StatelessWidget {
                                     crossAxisSpacing:
                                         10, // space between columns
                                     mainAxisSpacing: 10, // space between rows
-                                    childAspectRatio: width*.0125, // width/height ratio
+                                    childAspectRatio:
+                                        width * .0125, // width/height ratio
                                   ),
                                   itemCount: languages.length,
                                   itemBuilder: (context, index) {
                                     return Container(
                                       decoration: BoxDecoration(
                                         color: Colors.blue.shade100,
-                                        borderRadius: BorderRadius.circular(
-                                            width * .015),
+                                        borderRadius:
+                                            BorderRadius.circular(width * .015),
                                       ),
                                       alignment: Alignment.center,
                                       child: Text(
                                         languages[index],
-                                        style: TextStyle(
-                                            fontSize: width * .0325),
+                                        style:
+                                            TextStyle(fontSize: width * .0325),
                                       ),
                                     );
                                   },

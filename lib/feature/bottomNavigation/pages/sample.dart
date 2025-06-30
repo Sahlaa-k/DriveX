@@ -99,3 +99,83 @@
 //     });
 //   }
 // }
+
+import 'package:flutter/material.dart';
+
+class HomeScreen extends StatefulWidget {
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  final ScrollController _scrollController = ScrollController();
+  double scrollOffset = 0.0;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(() {
+      setState(() {
+        scrollOffset = _scrollController.offset;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  Widget sample({required Widget child}) {
+    // Gradually reduce opacity from 0.9 to 0.0 as you scroll (up to 450 px)
+    double topOpacity = (0.9 - (scrollOffset * 0.005)).clamp(0.0, 0.9);
+
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          stops: [0.0, 0.3],
+          colors: [
+            Colors.lightBlue.withOpacity(topOpacity),
+            Colors.white.withOpacity(topOpacity),
+          ],
+        ),
+      ),
+      child: child,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: sample(
+        child: SingleChildScrollView(
+          controller: _scrollController,
+          child: Column(
+            children: List.generate(10, (index) {
+              return Container(
+                height: 100,
+                width: 100,
+                margin: const EdgeInsets.only(bottom: 10),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  border: Border.all(color: Colors.black),
+                ),
+                child: Center(
+                  child: Text(
+                    "Data $index",
+                    style: const TextStyle(color: Colors.black),
+                  ),
+                ),
+              );
+            }),
+          ),
+        ),
+      ),
+    );
+  }
+}

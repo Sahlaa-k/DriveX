@@ -1,12 +1,11 @@
-
-
 import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 import 'package:drivex/core/constants/localVariables.dart';
 import 'package:drivex/feature/bottomNavigation/bookingpage.dart';
+import 'package:drivex/feature/bottomNavigation/pages/DriverProfile.dart';
 import 'package:drivex/feature/bottomNavigation/pages/home.dart';
 import 'package:drivex/feature/bottomNavigation/profilepage.dart';
+import 'package:drivex/pages/UserProfile.dart';
 import 'package:flutter/material.dart';
-
 
 import '../../core/constants/color_constant.dart';
 
@@ -22,8 +21,7 @@ class _BottomNavigationState extends State<BottomNavigation> {
   List pages = [
     Home(),
     BookingPages(),
-    ProfilePage(),
-
+    UserProfilePage(),
   ];
 
   @override
@@ -31,35 +29,33 @@ class _BottomNavigationState extends State<BottomNavigation> {
     return Scaffold(
       extendBody: true, // Ensures the navigation bar overlaps the body
       bottomNavigationBar: CurvedNavigationBar(
-
         index: selectIndex,
         items: [
-
           Icon(
             Icons.home_filled,
             size: width * 0.09,
-            color:  selectIndex == 0
+            color: selectIndex == 0
                 ? ColorConstant.backgroundColor // Pink for selected
                 : ColorConstant.backgroundColor,
           ),
-         Icon(
+          Icon(
             Icons.list_outlined,
             size: width * 0.09,
             color: selectIndex == 1
                 ? ColorConstant.backgroundColor // Pink for selected
-                :ColorConstant.backgroundColor,
+                : ColorConstant.backgroundColor,
           ),
           Icon(
             Icons.person,
             size: width * 0.09,
-            color:  selectIndex == 2
+            color: selectIndex == 2
                 ? ColorConstant.backgroundColor // Pink for selected
                 : ColorConstant.backgroundColor,
           ),
-
         ],
         color: ColorConstant.primaryColor, // No fixed color for navigation bar
-        buttonBackgroundColor: ColorConstant.primaryColor, // Matches page background
+        buttonBackgroundColor:
+            ColorConstant.primaryColor, // Matches page background
         backgroundColor: Colors.transparent, // Makes the navigation bar float
         animationCurve: Curves.easeInOut,
 
@@ -70,10 +66,8 @@ class _BottomNavigationState extends State<BottomNavigation> {
           });
         },
         letIndexChange: (index) => true,
-
       ),
       body: pages[selectIndex],
-
     );
   }
 }
