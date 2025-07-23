@@ -23,6 +23,7 @@ class _BookingPagesState extends State<BookingPages> {
       body: SingleChildScrollView(
         child: Column(
           children: [
+            
           ],
         ),
       ),
