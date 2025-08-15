@@ -53,9 +53,8 @@ class _BottomNavigationState extends State<BottomNavigation> {
                 : ColorConstant.backgroundColor,
           ),
         ],
-        color: ColorConstant.primaryColor, // No fixed color for navigation bar
-        buttonBackgroundColor:
-            ColorConstant.primaryColor, // Matches page background
+        color: ColorConstant.color1, // No fixed color for navigation bar
+        buttonBackgroundColor: ColorConstant.color1, // Matches page background
         backgroundColor: Colors.transparent, // Makes the navigation bar float
         animationCurve: Curves.easeInOut,
 

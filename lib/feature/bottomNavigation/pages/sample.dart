@@ -16,7 +16,6 @@
 //   LatLng? toLocation;
 
 //   static const String kGoogleApiKey = "YOUR_GOOGLE_API_KEY"; // 🔥 Put your API key here!
-
 //   final Mode _mode = Mode.overlay; // you can also use Mode.fullscreen
 
 //   @override
@@ -75,19 +74,15 @@
 //       language: "en",
 //       components: [Component(Component.country, "in")], // Optional: restrict to a country, e.g., "in" for India
 //     );
-
 //     if (p != null) {
 //       _displayPrediction(p, isFrom: isFrom);
 //     }
 //   }
-
 //   Future<void> _displayPrediction(Prediction p, {required bool isFrom}) async {
 //     GoogleMapsPlaces places = GoogleMapsPlaces(apiKey: kGoogleApiKey);
 //     PlacesDetailsResponse detail = await places.getDetailsByPlaceId(p.placeId!);
-
 //     final lat = detail.result.geometry!.location.lat;
 //     final lng = detail.result.geometry!.location.lng;
-
 //     setState(() {
 //       if (isFrom) {
 //         _fromController.text = p.description!;

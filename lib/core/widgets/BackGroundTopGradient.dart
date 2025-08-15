@@ -24,7 +24,6 @@ class _BackgroundtopgradientState extends State<Backgroundtopgradient> {
     });
   }
 
-
   @override
   void dispose() {
     _scrollController.dispose();
@@ -45,7 +44,8 @@ class _BackgroundtopgradientState extends State<Backgroundtopgradient> {
           stops: [0.0, 0.3],
           colors: [
             ColorConstant.color1.withOpacity(topOpacity),
-            ColorConstant.backgroundColor.withOpacity(topOpacity),
+            // ColorConstant.backgroundColor.withOpacity(topOpacity),
+            Colors.transparent
           ],
         ),
       ),

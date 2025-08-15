@@ -41,9 +41,24 @@ dependencies:
   firebase_core: ^3.13.0
   flutter_riverpod: ^2.6.1
   firebase_auth: ^5.5.3
-  google_sign_in: ^6.3.0
+  google_sign_in: ^7.1.1
   animated_bottom_navigation_bar: ^1.4.0
   curved_navigation_bar: ^1.0.6
+  geolocator: ^14.0.2
+  geocoding: ^4.0.0
+  google_maps_flutter: ^2.12.3
+  permission_handler: ^12.0.1
+  flutter_polyline_points: ^2.1.0
+  location: ^8.0.1
+  http: ^1.4.0
+  carousel_slider: ^5.1.1
+  image_picker: ^1.1.2
+  flutter_google_places_hoc081098: ^2.0.0
+  uuid: ^4.5.1
+  share_plus: ^10.0.2
+  # permission_handler: ^12.0.1
+  # google_place: ^0.4.7
+  # google_maps_webservice: ^0.0.20-nullsafety.7
 
 dev_dependencies:
   flutter_test:
@@ -54,7 +69,7 @@ dev_dependencies:
   # activated in the `analysis_options.yaml` file located at the root of your
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
-  flutter_lints: ^5.0.0
+  flutter_lints: ^6.0.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

@@ -1,4 +1,4 @@
-package com.example.drivex
+package com.kamal.drivex
 
 import io.flutter.embedding.android.FlutterActivity
 

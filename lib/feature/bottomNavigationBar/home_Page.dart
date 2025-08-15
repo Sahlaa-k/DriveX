@@ -17,22 +17,20 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int selectIndex = 0;
-List upComings=[
-  {
-   "icon":IconConstants.carRide,
-    "heading":"Ride",
-  },
-  {
-    "icon":IconConstants.packageBox,
-    "heading":"Package",
-
-  },
-  {
-    "icon":IconConstants.carKey,
-    "heading":"Rent",
-
-  },
-];
+  List upComings = [
+    {
+      "icon": IconConstants.carRide,
+      "heading": "Ride",
+    },
+    {
+      "icon": IconConstants.packageBox,
+      "heading": "Package",
+    },
+    {
+      "icon": IconConstants.carKey,
+      "heading": "Rent",
+    },
+  ];
 
   TextEditingController searchController = TextEditingController();
   @override
@@ -766,7 +764,6 @@ List upComings=[
                   },
                 ),
               ),
-
               Padding(
                 padding: EdgeInsets.all(width * 0.02),
                 child: Row(
@@ -802,7 +799,7 @@ List upComings=[
                 ),
               ),
               Padding(
-                padding:  EdgeInsets.only(left:width*0.02),
+                padding: EdgeInsets.only(left: width * 0.02),
                 child: SizedBox(
                   height: width * 0.4,
                   width: width,
@@ -815,23 +812,24 @@ List upComings=[
                       return Stack(
                         children: [
                           Container(
-                            margin: EdgeInsets.only(right: width*0.04),
+                            margin: EdgeInsets.only(right: width * 0.04),
                             height: width * 0.35,
-                            width: width*0.6,
+                            width: width * 0.6,
                             decoration: BoxDecoration(
-                              color: ColorConstant.color11.withOpacity(0.1),
-                              borderRadius: BorderRadius.all(Radius.circular(width*0.02))
-                            ),
+                                color: ColorConstant.color11.withOpacity(0.1),
+                                borderRadius: BorderRadius.all(
+                                    Radius.circular(width * 0.02))),
                             child: Column(
-                              children: [
-
-                              ],
+                              children: [],
                             ),
                           ),
                           Positioned(
-                            right:width*0.02,
-                            top:width*0.25,
-                            child: SvgPicture.asset(upComings[index]["icon"],height: width*0.15,),
+                            right: width * 0.02,
+                            top: width * 0.25,
+                            child: SvgPicture.asset(
+                              upComings[index]["icon"],
+                              height: width * 0.15,
+                            ),
                           )
                         ],
                       );

@@ -1,5 +1,7 @@
 import 'package:animated_bottom_navigation_bar/animated_bottom_navigation_bar.dart';
 import 'package:drivex/core/constants/color_constant.dart';
+import 'package:drivex/feature/bottomNavigation/pages/home.dart';
+import 'package:drivex/feature/bottomNavigation/pages/sample.dart';
 import 'package:drivex/feature/bottomNavigation/profilepage.dart';
 import 'package:drivex/feature/bottomNavigationBar/bookingPage.dart';
 import 'package:drivex/feature/bottomNavigationBar/home_Page.dart';
@@ -31,7 +33,7 @@ class _BottomNavDemoState extends State<BottomNavDemo> {
     HomePage(),
     BookingPagee(),
     HomePage(), // 🔧 Create this file instead of `Container()`
-    ProfilePage(),
+    Home(),
   ];
 
   @override

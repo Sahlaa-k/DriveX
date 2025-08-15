@@ -1,9 +1,13 @@
 import 'package:drivex/core/constants/color_constant.dart';
 import 'package:drivex/core/constants/localVariables.dart';
 import 'package:drivex/core/widgets/BackGroundTopGradient.dart';
+import 'package:drivex/feature/bottomNavigation/pages/D2D_page01.dart';
+import 'package:drivex/feature/bottomNavigation/pages/DoorToDoorPage.dart';
 import 'package:drivex/feature/bottomNavigation/pages/DriverHomePage.dart';
 import 'package:drivex/feature/bottomNavigation/pages/DriverProfile.dart';
 import 'package:drivex/feature/bottomNavigation/pages/RequestPage.dart';
+// import 'package:drivex/feature/bottomNavigation/pages/sample.dart';
+import 'package:drivex/feature/bottomNavigation/pages/testingPage.dart';
 import 'package:drivex/pages/AddDriver.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -17,6 +21,8 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
+  bool searchControl = false;
+
   final List<Map<String, dynamic>> drivers = [
     {
       'name': 'Ravi Kumar',
@@ -105,10 +111,6 @@ class _HomeState extends State<Home> {
           child: Column(
             children: [
               SizedBox(height: width * .025), SizedBox(height: width * .1),
-              Column(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [],
-              ),
 
               // Container(
               //   decoration: BoxDecoration(
@@ -125,70 +127,194 @@ class _HomeState extends State<Home> {
                         fontSize: width * .06,
                         fontWeight: FontWeight.w500),
                   ),
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                          context,
-                          CupertinoPageRoute(
-                            builder: (context) => Driverhomepage(),
-                          ));
-                    },
-                    child: Container(
-                      height: width * .1,
-                      width: width * .1,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(width * .02),
-                      ),
-                      child: Center(
-                        child: Icon(
-                          Icons.notifications,
-                          color: Colors.black,
+                  Wrap(
+                    children: [
+                      GestureDetector(
+                        onTap: () {
+                          // Navigator.push(
+                          //     context,
+                          //     CupertinoPageRoute(
+                          //       builder: (context) => Driverhomepage(),
+                          //     ));
+                          setState(() {
+                            searchControl = true;
+                          });
+                        },
+                        child: Container(
+                          height: width * .1,
+                          width: width * .1,
+                          decoration: BoxDecoration(
+                              // color: Colors.white,
+                              color: Colors.transparent,
+                              borderRadius: BorderRadius.circular(width * .02),
+                              border: Border.all(color: Colors.white)),
+                          child: Center(
+                            child: Icon(
+                              Icons.search,
+                              // color: Colors.black,
+                              color: Colors.white,
+                            ),
+                          ),
                         ),
                       ),
-                    ),
+                      SizedBox(
+                        width: width * .025,
+                      ),
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                              context,
+                              CupertinoPageRoute(
+                                builder: (context) => Driverhomepage(),
+                              ));
+                        },
+                        child: Container(
+                          height: width * .1,
+                          width: width * .1,
+                          decoration: BoxDecoration(
+                              // color: Colors.white,
+                              color: Colors.transparent,
+                              borderRadius: BorderRadius.circular(width * .02),
+                              border: Border.all(color: Colors.white)),
+                          child: Center(
+                            child: Icon(
+                              Icons.notifications,
+                              // color: Colors.black,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   )
                 ],
               ),
               SizedBox(height: width * .1),
-              SizedBox(
-                child: TextFormField(
-                  style: TextStyle(
-                    fontSize: width * 0.04,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.black87,
-                  ),
-                  decoration: InputDecoration(
-                    hintText: 'Search drivers...',
-                    hintStyle: TextStyle(
-                      color: Colors.grey.shade600,
-                      fontWeight: FontWeight.w500,
-                    ),
-                    prefixIcon: Icon(
-                      Icons.search,
-                      color: ColorConstant.secondaryColor,
-                      size: width * 0.06,
-                    ),
-                    filled: true,
-                    fillColor: Colors.white,
-                    contentPadding: EdgeInsets.symmetric(
-                      vertical: width * 0.035,
-                      horizontal: width * 0.04,
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(width * 0.035),
-                      borderSide: BorderSide(
-                        color: ColorConstant.secondaryColor.withOpacity(0.2),
-                        width: 1.2,
+              searchControl == false
+                  ? SizedBox(
+                      height: 0,
+                    )
+                  : Padding(
+                      padding: EdgeInsets.only(bottom: width * .05),
+                      child: SizedBox(
+                        child: TextFormField(
+                          style: TextStyle(
+                            fontSize: width * 0.04,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.black87,
+                          ),
+                          decoration: InputDecoration(
+                            hintText: 'Search drivers...',
+                            hintStyle: TextStyle(
+                              color: Colors.grey.shade600,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            prefixIcon: Icon(
+                              Icons.search,
+                              color: ColorConstant.color1,
+                              size: width * 0.06,
+                            ),
+                            filled: true,
+                            // fillColor: Colors.white,
+                            fillColor: Colors.transparent,
+                            contentPadding: EdgeInsets.symmetric(
+                              vertical: width * 0.035,
+                              horizontal: width * 0.04,
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius:
+                                  BorderRadius.circular(width * 0.035),
+                              borderSide: BorderSide(
+                                color: ColorConstant.bgColor.withOpacity(0.9),
+                                width: 2,
+                              ),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius:
+                                  BorderRadius.circular(width * 0.035),
+                              borderSide: BorderSide(
+                                color: ColorConstant.secondaryColor,
+                                width: 1.5,
+                              ),
+                            ),
+                          ),
+                        ),
                       ),
                     ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(width * 0.035),
-                      borderSide: BorderSide(
-                        color: ColorConstant.secondaryColor,
-                        width: 1.5,
+              Container(
+                width: width * .9,
+                height: width * .5,
+                decoration: BoxDecoration(
+                    color: ColorConstant.color1.withOpacity(.5),
+                    border: Border.all(
+                        color: ColorConstant.color1, width: width * .005),
+                    borderRadius:
+                        BorderRadius.all(Radius.circular(width * .05))),
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "Welcome to DriveX",
+                        style: TextStyle(
+                            color: ColorConstant.backgroundColor,
+                            fontSize: width * .075,
+                            fontWeight: FontWeight.w500),
                       ),
-                    ),
+                      Text(
+                        "Your complete transportation solution",
+                        style: TextStyle(
+                          color: ColorConstant.backgroundColor,
+                          fontSize: width * .04,
+                        ),
+                      ),
+                      SizedBox(
+                        width: width * .8,
+                        child: TextFormField(
+                          style: TextStyle(
+                            fontSize: width * 0.04,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.black87,
+                          ),
+                          decoration: InputDecoration(
+                            hintText: 'Where would you like to go.. !?',
+                            hintStyle: TextStyle(
+                              color: Colors.white54,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            prefixIcon: Icon(
+                              Icons.search,
+                              color: ColorConstant.color1,
+                              size: width * 0.06,
+                            ),
+                            filled: true,
+                            // fillColor: Colors.white,
+                            fillColor: Colors.transparent,
+                            contentPadding: EdgeInsets.symmetric(
+                              vertical: width * 0.035,
+                              horizontal: width * 0.04,
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius:
+                                  BorderRadius.circular(width * 0.035),
+                              borderSide: BorderSide(
+                                color: ColorConstant.bgColor.withOpacity(0.9),
+                                width: 2,
+                              ),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius:
+                                  BorderRadius.circular(width * 0.035),
+                              borderSide: BorderSide(
+                                color: ColorConstant.secondaryColor,
+                                width: 1.5,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -203,7 +329,7 @@ class _HomeState extends State<Home> {
                     Text(
                       "Hire Driver For You",
                       style: TextStyle(
-                        color: ColorConstant.thirdColor,
+                        color: ColorConstant.color1,
                         fontSize: width * 0.05,
                         fontWeight: FontWeight.w700,
                       ),
@@ -214,7 +340,13 @@ class _HomeState extends State<Home> {
                       // ),
                     ),
                     GestureDetector(
-                      onTap: () {},
+                      onTap: () {
+                        Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => D2DPage01(),
+                            ));
+                      },
                       child: SizedBox(
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -268,10 +400,11 @@ class _HomeState extends State<Home> {
                       padding: EdgeInsets.all(width * 0.035),
                       decoration: BoxDecoration(
                         // color: ColorConstant.primaryColor.withOpacity(0.08),
-                        color: ColorConstant.textColor1,
+                        // color: ColorConstant.textColor1,
+                        color: ColorConstant.color1.withOpacity(.25),
                         borderRadius: BorderRadius.circular(width * 0.03),
-                        border: Border.all(
-                            color: ColorConstant.primaryColor.withOpacity(0.2)),
+                        // border: Border.all(
+                        //     color: ColorConstant.primaryColor.withOpacity(0.2)),
                       ),
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -409,6 +542,30 @@ class _HomeState extends State<Home> {
       floatingActionButton: Column(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
+          FloatingActionButton(
+            backgroundColor: ColorConstant.secondaryColor,
+            elevation: 6,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: BorderSide(color: Colors.white, width: width * .01),
+            ),
+            onPressed: () {
+              Navigator.push(
+                context,
+                CupertinoPageRoute(
+                  builder: (context) => Doortodoorpage(),
+                ),
+              );
+            },
+            child: Icon(
+              Icons
+                  .inventory_2_outlined, // or any icon like Icons.add or Icons.assignment
+              color: Colors.white,
+              size: width * 0.07,
+            ),
+            tooltip: 'Request Driver',
+          ),
+          SizedBox(height: width * 0.025),
           FloatingActionButton(
             backgroundColor: ColorConstant.secondaryColor,
             elevation: 6,

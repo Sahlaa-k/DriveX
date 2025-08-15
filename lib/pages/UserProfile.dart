@@ -85,6 +85,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
       //   ),
       //   centerTitle: true,
       // ),
+
       body: Backgroundtopgradient(
         // padding: EdgeInsets.all(width * 0.05),
         child: SafeArea(

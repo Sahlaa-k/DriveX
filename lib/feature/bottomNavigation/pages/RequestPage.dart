@@ -1,3 +1,4 @@
+import 'package:drivex/core/widgets/BackGroundTopGradient.dart';
 import 'package:flutter/material.dart';
 import 'package:drivex/core/constants/color_constant.dart';
 
@@ -107,132 +108,21 @@ class _RequestPageState extends State<RequestPage> {
     return Scaffold(
       backgroundColor: Colors.grey.shade100,
       appBar: AppBar(
-        backgroundColor: ColorConstant.primaryColor,
+        backgroundColor: ColorConstant.color1,
         title: Text("Request Driver", style: TextStyle(color: Colors.white)),
         centerTitle: true,
         iconTheme: IconThemeData(color: Colors.white),
       ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(width * 0.05),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            TextField(
-              controller: fromController,
-              decoration: InputDecoration(
-                labelText: "From",
-                filled: true,
-                fillColor: Colors.white,
-                border:
-                    OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-            ),
-            SizedBox(height: width * 0.03),
-            TextField(
-              controller: toController,
-              decoration: InputDecoration(
-                labelText: "To",
-                filled: true,
-                fillColor: Colors.white,
-                border:
-                    OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-            ),
-            SizedBox(height: width * 0.03),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text("Trip Type:",
-                    style: TextStyle(fontWeight: FontWeight.bold)),
-                DropdownButton<String>(
-                  value: tripType ?? 'Select',
-                  onChanged: (value) => setState(() => tripType = value),
-                  items: tripTypeOptions
-                      .map((option) =>
-                          DropdownMenuItem(value: option, child: Text(option)))
-                      .toList(),
-                ),
-              ],
-            ),
-            Divider(),
-            ListTile(
-              leading: Icon(Icons.calendar_month, color: Colors.blueAccent),
-              title: Text("Travel Date"),
-              subtitle: Text(
-                selectedDate != null
-                    ? "${selectedDate!.day}/${selectedDate!.month}/${selectedDate!.year}"
-                    : "Choose a date",
-              ),
-              onTap: () => _pickDate(context),
-            ),
-            ListTile(
-              leading: Icon(Icons.access_time, color: Colors.blueAccent),
-              title: Text("Travel Time"),
-              subtitle: Text(
-                selectedTime != null
-                    ? _formatTimeWithAmPm(selectedTime!)
-                    : "Choose a time",
-              ),
-              onTap: () => _pickTime(context),
-            ),
-            Divider(),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text("Need Vehicle from us?",
-                    style: TextStyle(fontWeight: FontWeight.bold)),
-                DropdownButton<String>(
-                  value: needVehicle ?? 'Select',
-                  onChanged: (value) => setState(() => needVehicle = value),
-                  items: needVehicleOptions
-                      .map((option) =>
-                          DropdownMenuItem(value: option, child: Text(option)))
-                      .toList(),
-                ),
-              ],
-            ),
-            SizedBox(height: width * 0.03),
-            if (needVehicle == 'Yes') ...[
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text("Passengers:",
-                      style: TextStyle(fontWeight: FontWeight.bold)),
-                  DropdownButton<int>(
-                    value: selectedPassengers,
-                    onChanged: (value) =>
-                        setState(() => selectedPassengers = value!),
-                    items: List.generate(6, (index) => index + 1)
-                        .map((num) => DropdownMenuItem(
-                            value: num, child: Text(num.toString())))
-                        .toList(),
-                  ),
-                ],
-              ),
-              SizedBox(height: width * 0.03),
-            ],
-            if (needVehicle == 'No') ...[
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text("Vehicle Type:",
-                      style: TextStyle(fontWeight: FontWeight.bold)),
-                  DropdownButton<String>(
-                    value: selectedVehicle,
-                    onChanged: (value) =>
-                        setState(() => selectedVehicle = value!),
-                    items: vehicleTypes
-                        .map((type) =>
-                            DropdownMenuItem(value: type, child: Text(type)))
-                        .toList(),
-                  ),
-                ],
-              ),
-              SizedBox(height: width * 0.03),
+      body: Backgroundtopgradient(
+        child: SingleChildScrollView(
+          padding: EdgeInsets.all(width * 0.05),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
               TextField(
-                controller: luggageController,
+                controller: fromController,
                 decoration: InputDecoration(
-                  labelText: "Luggage Info (optional)",
+                  labelText: "From",
                   filled: true,
                   fillColor: Colors.white,
                   border: OutlineInputBorder(
@@ -240,108 +130,221 @@ class _RequestPageState extends State<RequestPage> {
                 ),
               ),
               SizedBox(height: width * 0.03),
+              TextField(
+                controller: toController,
+                decoration: InputDecoration(
+                  labelText: "To",
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+              SizedBox(height: width * 0.03),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text("Trip Type:",
+                      style: TextStyle(fontWeight: FontWeight.bold)),
+                  DropdownButton<String>(
+                    value: tripType ?? 'Select',
+                    onChanged: (value) => setState(() => tripType = value),
+                    items: tripTypeOptions
+                        .map((option) => DropdownMenuItem(
+                            value: option, child: Text(option)))
+                        .toList(),
+                  ),
+                ],
+              ),
+              Divider(),
+              ListTile(
+                leading: Icon(Icons.calendar_month, color: Colors.blueAccent),
+                title: Text("Travel Date"),
+                subtitle: Text(
+                  selectedDate != null
+                      ? "${selectedDate!.day}/${selectedDate!.month}/${selectedDate!.year}"
+                      : "Choose a date",
+                ),
+                onTap: () => _pickDate(context),
+              ),
+              ListTile(
+                leading: Icon(Icons.access_time, color: Colors.blueAccent),
+                title: Text("Travel Time"),
+                subtitle: Text(
+                  selectedTime != null
+                      ? _formatTimeWithAmPm(selectedTime!)
+                      : "Choose a time",
+                ),
+                onTap: () => _pickTime(context),
+              ),
+              Divider(),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text("Need Vehicle from us?",
+                      style: TextStyle(fontWeight: FontWeight.bold)),
+                  DropdownButton<String>(
+                    value: needVehicle ?? 'Select',
+                    onChanged: (value) => setState(() => needVehicle = value),
+                    items: needVehicleOptions
+                        .map((option) => DropdownMenuItem(
+                            value: option, child: Text(option)))
+                        .toList(),
+                  ),
+                ],
+              ),
+              SizedBox(height: width * 0.03),
+              if (needVehicle == 'Yes') ...[
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text("Passengers:",
+                        style: TextStyle(fontWeight: FontWeight.bold)),
+                    DropdownButton<int>(
+                      value: selectedPassengers,
+                      onChanged: (value) =>
+                          setState(() => selectedPassengers = value!),
+                      items: List.generate(6, (index) => index + 1)
+                          .map((num) => DropdownMenuItem(
+                              value: num, child: Text(num.toString())))
+                          .toList(),
+                    ),
+                  ],
+                ),
+                SizedBox(height: width * 0.03),
+              ],
+              if (needVehicle == 'No') ...[
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text("Vehicle Type:",
+                        style: TextStyle(fontWeight: FontWeight.bold)),
+                    DropdownButton<String>(
+                      value: selectedVehicle,
+                      onChanged: (value) =>
+                          setState(() => selectedVehicle = value!),
+                      items: vehicleTypes
+                          .map((type) =>
+                              DropdownMenuItem(value: type, child: Text(type)))
+                          .toList(),
+                    ),
+                  ],
+                ),
+                SizedBox(height: width * 0.03),
+                TextField(
+                  controller: luggageController,
+                  decoration: InputDecoration(
+                    labelText: "Luggage Info (optional)",
+                    filled: true,
+                    fillColor: Colors.white,
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+                SizedBox(height: width * 0.03),
+              ],
+
+              // Estimated Fare (just text for now)
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text("Estimated Fare:",
+                      style: TextStyle(fontWeight: FontWeight.bold)),
+                  Text("₹200 - ₹500", style: TextStyle(color: Colors.green)),
+                ],
+              ),
+              SizedBox(height: width * 0.03),
+
+              // Payment method
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text("Payment Method:",
+                      style: TextStyle(fontWeight: FontWeight.bold)),
+                  DropdownButton<String>(
+                    value: paymentMethod ?? 'Select',
+                    onChanged: (value) => setState(() => paymentMethod = value),
+                    items: paymentOptions
+                        .map((option) => DropdownMenuItem(
+                            value: option, child: Text(option)))
+                        .toList(),
+                  ),
+                ],
+              ),
+              SizedBox(height: width * 0.03),
+
+              // Trip Frequency
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text("Trip Frequency:",
+                      style: TextStyle(fontWeight: FontWeight.bold)),
+                  DropdownButton<String>(
+                    value: tripFrequency ?? 'Select',
+                    onChanged: (value) => setState(() => tripFrequency = value),
+                    items: tripFrequencyOptions
+                        .map((option) => DropdownMenuItem(
+                            value: option, child: Text(option)))
+                        .toList(),
+                  ),
+                ],
+              ),
+              SizedBox(height: width * 0.03),
+
+              // Emergency contact
+              TextField(
+                controller: emergencyController,
+                keyboardType: TextInputType.phone,
+                decoration: InputDecoration(
+                  labelText: "Emergency Contact *",
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+              SizedBox(height: width * 0.03),
+
+              // Purpose of Travel
+              TextField(
+                controller: purposeController,
+                maxLines: 2,
+                decoration: InputDecoration(
+                  labelText: "Purpose of Travel",
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+              SizedBox(height: width * 0.03),
+
+              // Notes
+              TextField(
+                controller: noteController,
+                maxLines: 3,
+                decoration: InputDecoration(
+                  labelText: "Note (optional)",
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+              SizedBox(height: width * 0.05),
+              ElevatedButton.icon(
+                onPressed: _submitRequest,
+                icon: Icon(Icons.send, color: Colors.white),
+                label: Text("Submit Request",
+                    style: TextStyle(color: Colors.white)),
+                style: ElevatedButton.styleFrom(
+                  minimumSize: Size(double.infinity, 50),
+                  backgroundColor: ColorConstant.primaryColor,
+                ),
+              ),
+              SizedBox(height: width * 0.2),
             ],
-
-            // Estimated Fare (just text for now)
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text("Estimated Fare:",
-                    style: TextStyle(fontWeight: FontWeight.bold)),
-                Text("₹200 - ₹500", style: TextStyle(color: Colors.green)),
-              ],
-            ),
-            SizedBox(height: width * 0.03),
-
-            // Payment method
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text("Payment Method:",
-                    style: TextStyle(fontWeight: FontWeight.bold)),
-                DropdownButton<String>(
-                  value: paymentMethod ?? 'Select',
-                  onChanged: (value) => setState(() => paymentMethod = value),
-                  items: paymentOptions
-                      .map((option) =>
-                          DropdownMenuItem(value: option, child: Text(option)))
-                      .toList(),
-                ),
-              ],
-            ),
-            SizedBox(height: width * 0.03),
-
-            // Trip Frequency
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text("Trip Frequency:",
-                    style: TextStyle(fontWeight: FontWeight.bold)),
-                DropdownButton<String>(
-                  value: tripFrequency ?? 'Select',
-                  onChanged: (value) => setState(() => tripFrequency = value),
-                  items: tripFrequencyOptions
-                      .map((option) =>
-                          DropdownMenuItem(value: option, child: Text(option)))
-                      .toList(),
-                ),
-              ],
-            ),
-            SizedBox(height: width * 0.03),
-
-            // Emergency contact
-            TextField(
-              controller: emergencyController,
-              keyboardType: TextInputType.phone,
-              decoration: InputDecoration(
-                labelText: "Emergency Contact *",
-                filled: true,
-                fillColor: Colors.white,
-                border:
-                    OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-            ),
-            SizedBox(height: width * 0.03),
-
-            // Purpose of Travel
-            TextField(
-              controller: purposeController,
-              maxLines: 2,
-              decoration: InputDecoration(
-                labelText: "Purpose of Travel",
-                filled: true,
-                fillColor: Colors.white,
-                border:
-                    OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-            ),
-            SizedBox(height: width * 0.03),
-
-            // Notes
-            TextField(
-              controller: noteController,
-              maxLines: 3,
-              decoration: InputDecoration(
-                labelText: "Note (optional)",
-                filled: true,
-                fillColor: Colors.white,
-                border:
-                    OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-            ),
-            SizedBox(height: width * 0.05),
-            ElevatedButton.icon(
-              onPressed: _submitRequest,
-              icon: Icon(Icons.send, color: Colors.white),
-              label:
-                  Text("Submit Request", style: TextStyle(color: Colors.white)),
-              style: ElevatedButton.styleFrom(
-                minimumSize: Size(double.infinity, 50),
-                backgroundColor: ColorConstant.primaryColor,
-              ),
-            ),
-            SizedBox(height: width * 0.2),
-          ],
+          ),
         ),
       ),
     );
