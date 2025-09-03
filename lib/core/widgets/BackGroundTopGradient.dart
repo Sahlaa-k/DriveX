@@ -37,13 +37,12 @@ class _BackgroundtopgradientState extends State<Backgroundtopgradient> {
     return Container(
       decoration: BoxDecoration(
         // color: Colors.blue,
-
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           stops: [0.0, 0.3],
           colors: [
-            ColorConstant.color1.withOpacity(topOpacity),
+            ColorConstant.color11.withOpacity(0.4),
             // ColorConstant.backgroundColor.withOpacity(topOpacity),
             Colors.transparent
           ],

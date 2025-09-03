@@ -1,10 +1,10 @@
 import 'package:animated_bottom_navigation_bar/animated_bottom_navigation_bar.dart';
 import 'package:drivex/core/constants/color_constant.dart';
-import 'package:drivex/feature/bottomNavigation/pages/home.dart';
-import 'package:drivex/feature/bottomNavigation/pages/sample.dart';
-import 'package:drivex/feature/bottomNavigation/profilepage.dart';
-import 'package:drivex/feature/bottomNavigationBar/bookingPage.dart';
+
+import 'package:drivex/feature/bookings/screens/bookingPage.dart';
 import 'package:drivex/feature/bottomNavigationBar/home_Page.dart';
+import 'package:drivex/feature/profile/profilePage.dart';
+import 'package:drivex/feature/rend_vehicles/screens/Rental_page.dart';
 import 'package:flutter/material.dart';
 
 class BottomNavDemo extends StatefulWidget {
@@ -17,23 +17,26 @@ class _BottomNavDemoState extends State<BottomNavDemo> {
 
   final List<IconData> iconList = [
     Icons.home,
-    Icons.local_taxi, // Booking
-    Icons.directions_car_outlined, // Vehicle
+    Icons.list_alt, // Booking
+    Icons.local_taxi,
+    Icons.delivery_dining, // Vehicle
     Icons.person, // Profile
   ];
 
   final List<String> labels = [
     "Home",
     "Booking",
-    "Vehicle",
+    "Rental",
+    "Delivery",
     "Profile",
   ];
 
   final List<Widget> _pages = [
     HomePage(),
     BookingPagee(),
-    HomePage(), // 🔧 Create this file instead of `Container()`
-    Home(),
+    RentalPage(),
+    Container(),
+    ProfilePage(),
   ];
 
   @override
@@ -42,11 +45,11 @@ class _BottomNavDemoState extends State<BottomNavDemo> {
       backgroundColor: Colors.white,
       body: _pages[_bottomNavIndex],
       bottomNavigationBar: Container(
-        decoration: const BoxDecoration(
+        decoration:  BoxDecoration(
           color: Colors.white,
           boxShadow: [
             BoxShadow(
-              color: Colors.black12,
+              color: ColorConstant.textColor2.withOpacity(0.2),
               blurRadius: 2,
               offset: Offset(0, -3),
             ),

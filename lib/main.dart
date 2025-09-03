@@ -1,8 +1,8 @@
+
 import 'package:drivex/core/constants/localVariables.dart';
-import 'package:drivex/feature/auth/screens/login.dart';
+
 import 'package:drivex/feature/bottomNavigationBar/bottomNavigation.dart';
-import 'package:drivex/feature/onboarding/onboardingPage.dart';
-import 'package:drivex/feature/onboarding/splash.dart';
+
 import 'package:drivex/firebase_options.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/cupertino.dart';
@@ -28,7 +28,11 @@ class DriveXApp extends StatelessWidget {
       },
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
-        home: BottomNavDemo(),
+        home:  BottomNavDemo(),
+
+        theme:  ThemeData(
+          textTheme: GoogleFonts.kulimParkTextTheme(),
+        ),
       ),
     );
   }

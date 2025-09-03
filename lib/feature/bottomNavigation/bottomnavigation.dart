@@ -3,7 +3,7 @@ import 'package:drivex/core/constants/localVariables.dart';
 import 'package:drivex/feature/bottomNavigation/bookingpage.dart';
 import 'package:drivex/feature/bottomNavigation/pages/DriverProfile.dart';
 import 'package:drivex/feature/bottomNavigation/pages/home.dart';
-import 'package:drivex/feature/bottomNavigation/profilepage.dart';
+import 'package:drivex/feature/profile/profilePage.dart';
 import 'package:drivex/pages/UserProfile.dart';
 import 'package:flutter/material.dart';
 
@@ -19,9 +19,9 @@ class BottomNavigation extends StatefulWidget {
 class _BottomNavigationState extends State<BottomNavigation> {
   int selectIndex = 0;
   List pages = [
-    Home(),
+    Container(),
     BookingPages(),
-    UserProfilePage(),
+    ProfilePage(),
   ];
 
   @override
