@@ -2,6 +2,7 @@ import 'package:animated_bottom_navigation_bar/animated_bottom_navigation_bar.da
 import 'package:drivex/core/constants/color_constant.dart';
 
 import 'package:drivex/feature/bookings/screens/bookingPage.dart';
+import 'package:drivex/feature/bottomNavigation/pages/D2D/D2D_mainPage.dart';
 import 'package:drivex/feature/bottomNavigationBar/home_Page.dart';
 import 'package:drivex/feature/profile/profilePage.dart';
 import 'package:drivex/feature/rend_vehicles/screens/Rental_page.dart';
@@ -35,7 +36,7 @@ class _BottomNavDemoState extends State<BottomNavDemo> {
     HomePage(),
     BookingPagee(),
     RentalPage(),
-    Container(),
+    D2DMainpage(),
     ProfilePage(),
   ];
 
@@ -45,7 +46,7 @@ class _BottomNavDemoState extends State<BottomNavDemo> {
       backgroundColor: Colors.white,
       body: _pages[_bottomNavIndex],
       bottomNavigationBar: Container(
-        decoration:  BoxDecoration(
+        decoration: BoxDecoration(
           color: Colors.white,
           boxShadow: [
             BoxShadow(

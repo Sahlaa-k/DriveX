@@ -9,10 +9,14 @@ class ImageConstant {
   static const booking2 = "assets/images/bookin11";
   static const booking3 = "assets/images/bookingg22";
   static const profilePic = "assets/images/profile_pic.jpg";
-  static const carHDRent1="assets/images/carrental_1.jpg";
-  static const carHDRent2="assets/images/rentalcar2.jpg";
-static const d2dServiceEg="assets/images/pexels-israr-ahmrd-152664845-10568559.jpg";
-  static const carHDRent3="assets/images/rentalcar3.jpg";
-  static const carHDRent4="assets/images/rentalcar4.jpg";
+  static const carHDRent1 = "assets/images/carrental_1.jpg";
+  static const carHDRent2 = "assets/images/rentalcar2.jpg";
+  static const d2dServiceEg =
+      "assets/images/pexels-israr-ahmrd-152664845-10568559.jpg";
+  static const carHDRent3 = "assets/images/rentalcar3.jpg";
+  static const carHDRent4 = "assets/images/rentalcar4.jpg";
+  static const deliveryman1 = "assets/images/DeliveryMan.png";
+  static const deliveryman2 = "assets/images/deliveryman2.PNG";
 
+  static const coin = "assets/images/coin.svg";
 }
