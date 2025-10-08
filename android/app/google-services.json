@@ -9,10 +9,18 @@
       "client_info": {
         "mobilesdk_app_id": "1:433045774465:android:fceba2befc1b15e644ed80",
         "android_client_info": {
-          "package_name": "com.kamal.drivex"
+          "package_name": "com.example.drivex"
         }
       },
       "oauth_client": [
+        {
+          "client_id": "433045774465-74fdlo4aok1r75v2j3207s6e6uf9b4mv.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.drivex",
+            "certificate_hash": "d885a0a6f3b7223cfbaf27d7eb527621f61ead40"
+          }
+        },
         {
           "client_id": "433045774465-su9lf1dheubj5ubmddis3ldeju561v1d.apps.googleusercontent.com",
           "client_type": 3
@@ -29,6 +37,57 @@
             {
               "client_id": "433045774465-su9lf1dheubj5ubmddis3ldeju561v1d.apps.googleusercontent.com",
               "client_type": 3
+            },
+            {
+              "client_id": "433045774465-le2l7hikuokicee6bdh7h7vgqnq7fgni.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.drivex"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:433045774465:android:eb81b7ec63e31d1a44ed80",
+        "android_client_info": {
+          "package_name": "com.kamal.drivex"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "433045774465-naiuc2pns5urn1cvu9fm09bb8m9bbgrg.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.kamal.drivex",
+            "certificate_hash": "f1e49fbf79028e426d1bcf0243fdcbcc94773862"
+          }
+        },
+        {
+          "client_id": "433045774465-su9lf1dheubj5ubmddis3ldeju561v1d.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCRJ7DGobw4KC9yonpfIQ_RzxNIEG0qjVI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "433045774465-su9lf1dheubj5ubmddis3ldeju561v1d.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "433045774465-le2l7hikuokicee6bdh7h7vgqnq7fgni.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.drivex"
+              }
             }
           ]
         }

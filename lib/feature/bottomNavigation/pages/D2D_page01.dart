@@ -3553,91 +3553,3603 @@
 
 ///////////////////////////////////////////////////////////////
 
+// import 'dart:async';
+
+// import 'package:cloud_firestore/cloud_firestore.dart';
+// import 'package:dotted_border/dotted_border.dart';
+// import 'package:drivex/core/constants/color_constant.dart';
+// import 'package:drivex/core/constants/imageConstants.dart';
+// import 'package:drivex/feature/bottomNavigation/pages/D2D/D2D_placeSearchPage.dart';
+// import 'package:flutter/cupertino.dart';
+// import 'package:flutter/material.dart';
+// import 'package:flutter/services.dart';
+// import 'package:share_plus/share_plus.dart';
+// import 'package:uuid/uuid.dart';
+
+// class D2DPage01 extends StatefulWidget {
+//   const D2DPage01({super.key});
+
+//   @override
+//   State<D2DPage01> createState() => _D2DPage01State();
+// }
+
+// class _D2DPage01State extends State<D2DPage01> {
+//   String? tripId;
+
+//   StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>? tripSub;
+
+//   Map<String, double>? pickupCoordinates;
+//   Map<String, double>? dropCoordinates;
+//   // Pickup controller
+//   final TextEditingController fromController = TextEditingController();
+
+//   final TextEditingController toController = TextEditingController();
+//   final FocusNode fromFocus = FocusNode();
+//   final FocusNode toFocus = FocusNode();
+
+//   // Dynamic destination controllers (start with one)
+//   final List<TextEditingController> _destControllers = [
+//     TextEditingController(),
+//   ];
+//   bool isFieldActive = false;
+//   String activeField = "";
+
+//   @override
+//   void initState() {
+//     super.initState();
+//     _createTripDocument();
+
+//     fromFocus.addListener(() {
+//       if (fromFocus.hasFocus) {
+//         setState(() {
+//           isFieldActive = true;
+//           activeField = "from";
+//         });
+//       }
+//     });
+//     toFocus.addListener(() {
+//       if (toFocus.hasFocus) {
+//         setState(() {
+//           isFieldActive = true;
+//           activeField = "to";
+//         });
+//       }
+//     });
+
+//     // show/hide Drop dynamically + clear Drop when Pickup cleared
+//     fromController.addListener(() {
+//       final hasPickup = fromController.text.trim().isNotEmpty;
+//       if (!hasPickup && toController.text.isNotEmpty) {
+//         toController.clear(); // auto-clear drop when pickup removed
+//       }
+//       if (mounted) setState(() {}); // rebuild to update visibility
+//     });
+//   }
+
+//   // UI helper
+//   void _showSnackBar(BuildContext context, String msg) {
+//     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+//   }
+
+//   // Insert a new destination controller (optionally after an index)
+//   void _addDestination({int? afterIndex}) {
+//     setState(() {
+//       final c = TextEditingController();
+//       if (afterIndex == null ||
+//           afterIndex < 0 ||
+//           afterIndex >= _destControllers.length) {
+//         _destControllers.add(c);
+//       } else {
+//         _destControllers.insert(afterIndex + 1, c);
+//       }
+//     });
+//   }
+
+//   // Optional: remove a destination
+//   void _removeDestination(int index) {
+//     if (_destControllers.length == 1) {
+//       _showSnackBar(context, "At least one destination is required.");
+//       return;
+//     }
+//     setState(() {
+//       _destControllers.removeAt(index).dispose();
+//     });
+//   }
+
+//   // Placeholder for your share-link sheet
+//   // void openRequestLocationSheet(BuildContext context, String slot) {
+//   //   _showSnackBar(context, "Share link for $slot (stub).");
+//   // }
+//   void openRequestLocationSheet(BuildContext context, String slot) {
+//     showCupertinoModalPopup(
+//       context: context,
+//       barrierColor: Colors.black.withOpacity(.35),
+//       builder: (ctx) {
+//         Future<Map<String, dynamic>>? linkFuture;
+
+//         return StatefulBuilder(
+//           builder: (ctx, setSheet) {
+//             linkFuture ??= _sendLocationRequest(slot);
+//             final size = MediaQuery.of(ctx).size;
+//             final width = size.width;
+//             final height = size.height;
+
+//             return Material(
+//               color: Colors.transparent,
+//               child: SafeArea(
+//                 top: false,
+//                 child: Align(
+//                   alignment: Alignment.bottomCenter,
+//                   child: Container(
+//                     width: width,
+//                     height: height * .65,
+//                     decoration: BoxDecoration(
+//                       color: Colors.white,
+//                       borderRadius: BorderRadius.vertical(
+//                           top: Radius.circular(width * .05)),
+//                     ),
+//                     child: Padding(
+//                       padding: EdgeInsets.symmetric(
+//                         horizontal: width * .05,
+//                         vertical: width * .04,
+//                       ),
+//                       child: Column(
+//                         crossAxisAlignment: CrossAxisAlignment.start,
+//                         children: [
+//                           // drag handle
+//                           Center(
+//                             child: Container(
+//                               width: width * .18,
+//                               height: width * .013,
+//                               decoration: BoxDecoration(
+//                                 color: Colors.black12,
+//                                 borderRadius:
+//                                     BorderRadius.circular(width * .01),
+//                               ),
+//                             ),
+//                           ),
+//                           SizedBox(height: width * .035),
+//                           Row(
+//                             children: [
+//                               Expanded(
+//                                 child: Text(
+//                                   "Request Location",
+//                                   style: TextStyle(
+//                                     fontSize: width * .05,
+//                                     fontWeight: FontWeight.w700,
+//                                   ),
+//                                 ),
+//                               ),
+//                               CupertinoButton(
+//                                 padding: EdgeInsets.zero,
+//                                 onPressed: () => Navigator.pop(ctx),
+//                                 child: Icon(
+//                                   CupertinoIcons.xmark,
+//                                   size: width * .06,
+//                                 ),
+//                               )
+//                             ],
+//                           ),
+//                           SizedBox(height: width * .01),
+//                           Text(
+//                             'Share the link below to get the ${slot.toUpperCase()} location.',
+//                             style: TextStyle(
+//                               fontSize: width * .0325,
+//                               color: Colors.black54,
+//                             ),
+//                           ),
+//                           SizedBox(height: width * .04),
+//                           Expanded(
+//                             child: FutureBuilder<Map<String, dynamic>>(
+//                               future: linkFuture,
+//                               builder: (ctx, snap) {
+//                                 if (snap.connectionState ==
+//                                     ConnectionState.waiting) {
+//                                   return Center(
+//                                     child: Column(
+//                                       mainAxisSize: MainAxisSize.min,
+//                                       children: [
+//                                         const CupertinoActivityIndicator(
+//                                             radius: 14),
+//                                         SizedBox(height: width * .03),
+//                                         Text(
+//                                           "Generating secure link…",
+//                                           style: TextStyle(
+//                                             fontSize: width * .034,
+//                                             color: Colors.black54,
+//                                           ),
+//                                         ),
+//                                       ],
+//                                     ),
+//                                   );
+//                                 }
+//                                 if (snap.hasError) {
+//                                   return Column(
+//                                     mainAxisAlignment: MainAxisAlignment.center,
+//                                     children: [
+//                                       Icon(
+//                                         CupertinoIcons.exclamationmark_triangle,
+//                                         color: Colors.red,
+//                                         size: width * .12,
+//                                       ),
+//                                       SizedBox(height: width * .02),
+//                                       Text(
+//                                         "Couldn't create link",
+//                                         style: TextStyle(
+//                                           fontSize: width * .042,
+//                                           fontWeight: FontWeight.w600,
+//                                         ),
+//                                       ),
+//                                       SizedBox(height: width * .02),
+//                                       Text(
+//                                         "${snap.error}",
+//                                         textAlign: TextAlign.center,
+//                                         style: TextStyle(
+//                                           fontSize: width * .032,
+//                                           color: Colors.black54,
+//                                         ),
+//                                       ),
+//                                       SizedBox(height: width * .04),
+//                                       CupertinoButton.filled(
+//                                         onPressed: () => setSheet(
+//                                           () => linkFuture =
+//                                               _sendLocationRequest(slot),
+//                                         ),
+//                                         child: const Text("Try again"),
+//                                       ),
+//                                     ],
+//                                   );
+//                                 }
+
+//                                 final data = snap.data!;
+//                                 final link = data['link'] as String;
+//                                 final expiresAt = data['expiresAt'] as String?;
+
+//                                 return Column(
+//                                   crossAxisAlignment: CrossAxisAlignment.start,
+//                                   children: [
+//                                     Container(
+//                                       padding: EdgeInsets.all(width * .035),
+//                                       decoration: BoxDecoration(
+//                                         color: const Color(0xFFF5F7FA),
+//                                         border: Border.all(
+//                                           color: const Color(0xFFE5E9F0),
+//                                         ),
+//                                         borderRadius:
+//                                             BorderRadius.circular(width * .03),
+//                                       ),
+//                                       child: Column(
+//                                         crossAxisAlignment:
+//                                             CrossAxisAlignment.start,
+//                                         children: [
+//                                           Text(
+//                                             "Share this link",
+//                                             style: TextStyle(
+//                                               fontSize: width * .035,
+//                                               color: Colors.black54,
+//                                             ),
+//                                           ),
+//                                           SizedBox(height: width * .02),
+//                                           SelectableText(
+//                                             link,
+//                                             style: TextStyle(
+//                                               fontSize: width * .034,
+//                                               fontFamily: 'monospace',
+//                                             ),
+//                                           ),
+//                                           if (expiresAt != null) ...[
+//                                             SizedBox(height: width * .02),
+//                                             Text(
+//                                               "Expires: $expiresAt",
+//                                               style: TextStyle(
+//                                                 fontSize: width * .03,
+//                                                 color: Colors.black45,
+//                                               ),
+//                                             ),
+//                                           ],
+//                                           SizedBox(height: width * .02),
+//                                           Row(
+//                                             children: [
+//                                               // Copy
+//                                               Expanded(
+//                                                 child: CupertinoButton(
+//                                                   color:
+//                                                       const Color(0xFFE8F3FF),
+//                                                   padding: EdgeInsets.symmetric(
+//                                                     vertical: width * .028,
+//                                                   ),
+//                                                   onPressed: () async {
+//                                                     await Clipboard.setData(
+//                                                       ClipboardData(text: link),
+//                                                     );
+//                                                     if (mounted) {
+//                                                       ScaffoldMessenger.of(
+//                                                               context)
+//                                                           .showSnackBar(
+//                                                         const SnackBar(
+//                                                           content: Text(
+//                                                               "Link copied"),
+//                                                           behavior:
+//                                                               SnackBarBehavior
+//                                                                   .floating,
+//                                                           duration: Duration(
+//                                                               seconds: 1),
+//                                                         ),
+//                                                       );
+//                                                     }
+//                                                   },
+//                                                   child: Row(
+//                                                     mainAxisAlignment:
+//                                                         MainAxisAlignment
+//                                                             .center,
+//                                                     children: [
+//                                                       Icon(
+//                                                         CupertinoIcons
+//                                                             .doc_on_doc,
+//                                                         size: width * .05,
+//                                                         color: const Color(
+//                                                             0xFF1976D2),
+//                                                       ),
+//                                                       SizedBox(
+//                                                           width: width * .02),
+//                                                       Text(
+//                                                         "Copy link",
+//                                                         style: TextStyle(
+//                                                           fontSize:
+//                                                               width * .035,
+//                                                           fontWeight:
+//                                                               FontWeight.w700,
+//                                                           color: const Color(
+//                                                               0xFF1976D2),
+//                                                         ),
+//                                                       ),
+//                                                     ],
+//                                                   ),
+//                                                 ),
+//                                               ),
+//                                               SizedBox(width: width * .03),
+//                                               // Share
+//                                               Expanded(
+//                                                 child: CupertinoButton.filled(
+//                                                   padding: EdgeInsets.symmetric(
+//                                                     vertical: width * .028,
+//                                                   ),
+//                                                   onPressed: () async {
+//                                                     await Share.share(
+//                                                       link,
+//                                                       subject:
+//                                                           "Share your ${slot.toUpperCase()} location",
+//                                                     );
+//                                                   },
+//                                                   child: Row(
+//                                                     mainAxisAlignment:
+//                                                         MainAxisAlignment
+//                                                             .center,
+//                                                     children: [
+//                                                       Icon(CupertinoIcons.share,
+//                                                           size: width * .05),
+//                                                       SizedBox(
+//                                                           width: width * .02),
+//                                                       Text(
+//                                                         "Share",
+//                                                         style: TextStyle(
+//                                                           fontSize:
+//                                                               width * .035,
+//                                                           fontWeight:
+//                                                               FontWeight.w700,
+//                                                         ),
+//                                                       ),
+//                                                     ],
+//                                                   ),
+//                                                 ),
+//                                               ),
+//                                             ],
+//                                           ),
+//                                         ],
+//                                       ),
+//                                     ),
+//                                     SizedBox(height: width * .04),
+
+//                                     // Recent Requests placeholder
+//                                     Text(
+//                                       "Recent Request",
+//                                       style: TextStyle(
+//                                         fontSize: width * .036,
+//                                         fontWeight: FontWeight.w600,
+//                                       ),
+//                                     ),
+//                                     SizedBox(height: width * .025),
+//                                     Container(
+//                                       height: width * .25,
+//                                       decoration: BoxDecoration(
+//                                         color: const Color(0xFFF5F7FA),
+//                                         border:
+//                                             Border.all(color: Colors.black12),
+//                                         borderRadius:
+//                                             BorderRadius.circular(width * .03),
+//                                       ),
+//                                       child: Center(
+//                                         child: Row(
+//                                           mainAxisAlignment:
+//                                               MainAxisAlignment.center,
+//                                           children: [
+//                                             Icon(
+//                                               CupertinoIcons.location_solid,
+//                                               color: Colors.redAccent,
+//                                               size: width * .06,
+//                                             ),
+//                                             SizedBox(width: width * .03),
+//                                             Text(
+//                                               "No recent Location",
+//                                               style: TextStyle(
+//                                                 fontSize: width * .04,
+//                                                 color: Colors.black54,
+//                                               ),
+//                                             ),
+//                                           ],
+//                                         ),
+//                                       ),
+//                                     ),
+//                                     SizedBox(height: width * .025),
+//                                     SizedBox(
+//                                       width: double.infinity,
+//                                       child: CupertinoButton(
+//                                         color: const Color(0xFF1E88E5),
+//                                         onPressed: () => Navigator.pop(ctx),
+//                                         child: Text(
+//                                           "Done",
+//                                           style: TextStyle(
+//                                               fontSize: width * .04,
+//                                               color: Colors.white,
+//                                               fontWeight: FontWeight.w700),
+//                                         ),
+//                                       ),
+//                                     ),
+//                                   ],
+//                                 );
+//                               },
+//                             ),
+//                           ),
+//                         ],
+//                       ),
+//                     ),
+//                   ),
+//                 ),
+//               ),
+//             );
+//           },
+//         );
+//       },
+//     );
+//   }
+
+//   Future<void> _createTripDocument() async {
+//     final docRef =
+//         await FirebaseFirestore.instance.collection("locationRequests").add({
+//       "pickupLocation": null,
+//       "dropLocation": null,
+//       "senderName": "Kamal",
+//       "senderPhone": "9876543210",
+//       "createdAt": FieldValue.serverTimestamp(),
+//     });
+
+//     tripId = docRef.id;
+//     _listenToTripUpdates();
+//   }
+
+//   void _listenToTripUpdates() {
+//     tripSub?.cancel();
+//     final id = tripId;
+//     if (id == null) return;
+//     tripSub = FirebaseFirestore.instance
+//         .collection("locationRequests")
+//         .doc(id)
+//         .snapshots()
+//         .listen((doc) {
+//       if (!doc.exists) return;
+//       final data = doc.data();
+//       if (data == null) return;
+
+//       // pickup
+//       if (data['pickupLocation'] != null) {
+//         final coords = Map<String, dynamic>.from(data['pickupLocation']);
+//         setState(() {
+//           pickupCoordinates = {
+//             "lat": coords['lat'] * 1.0,
+//             "lng": coords['lng'] * 1.0
+//           };
+//           fromController.text = "${coords['lat']}, ${coords['lng']}";
+//         });
+//       }
+
+//       // drop
+//       if (data['dropLocation'] != null) {
+//         final coords = Map<String, dynamic>.from(data['dropLocation']);
+//         setState(() {
+//           dropCoordinates = {
+//             "lat": coords['lat'] * 1.0,
+//             "lng": coords['lng'] * 1.0
+//           };
+//           toController.text = "${coords['lat']}, ${coords['lng']}";
+//         });
+//       }
+//     });
+//   }
+
+//   Future<Map<String, dynamic>> _sendLocationRequest(String type) async {
+//     if (tripId == null) {
+//       await _createTripDocument(); // ensure exists
+//     }
+//     final id = tripId!;
+//     final shareId = const Uuid().v4();
+//     final expiresAtDt = DateTime.now().add(const Duration(hours: 24));
+//     final expiresAtIso = expiresAtDt.toIso8601String();
+
+//     // your deep link
+//     final link = "https://drivex-2a34e.web.app/?id=$id&type=$type&sid=$shareId";
+
+//     // log the share
+//     await FirebaseFirestore.instance
+//         .collection("locationRequests")
+//         .doc(id)
+//         .collection("shares")
+//         .doc(shareId)
+//         .set({
+//       "type": type,
+//       "link": link,
+//       "status": "sent",
+//       "createdAt": FieldValue.serverTimestamp(),
+//       "expiresAt": Timestamp.fromDate(expiresAtDt),
+//     });
+
+//     return {"link": link, "expiresAt": expiresAtIso, "shareId": shareId};
+//   }
+
+//   // Next page validation
+//   void _nextPage() {
+//     final pickup = fromController.text.trim();
+//     final dests = _destControllers.map((c) => c.text.trim()).toList();
+
+//     if (pickup.isEmpty) {
+//       _showSnackBar(context, "Please enter Pick-Up location.");
+//       return;
+//     }
+//     if (dests.any((d) => d.isEmpty)) {
+//       _showSnackBar(context, "Please fill all Destination locations.");
+//       return;
+//     }
+
+//     _showSnackBar(context, "Proceeding with ${dests.length} destination(s).");
+//     // TODO: Navigate with your data
+//   }
+
+//   @override
+//   void dispose() {
+//     fromController.dispose();
+//     for (final c in _destControllers) {
+//       c.dispose();
+//     }
+//     toController.dispose();
+//     fromFocus.dispose();
+//     toFocus.dispose();
+//     tripSub?.cancel();
+//     super.dispose();
+//   }
+
+//   // @override
+//   // void dispose() {
+//   //   fromController.dispose();
+//   //   for (final c in _destControllers) {
+//   //     c.dispose();
+//   //   }
+//   //   super.dispose();
+//   // }
+
+//   @override
+//   Widget build(BuildContext context) {
+//     final size = MediaQuery.of(context).size;
+//     final width = size.width;
+//     final height = size.height;
+
+//     return Scaffold(
+//       backgroundColor: Colors.white,
+//       body: Container(
+//         color: ColorConstant.color1.withOpacity(.15),
+//         child: SizedBox(
+//           height: height,
+//           child: SingleChildScrollView(
+//             child: SafeArea(
+//               child: Padding(
+//                 padding: EdgeInsets.symmetric(horizontal: width * .02),
+//                 child: Center(
+//                   child: Column(
+//                     mainAxisAlignment: MainAxisAlignment.center,
+//                     crossAxisAlignment: CrossAxisAlignment.center,
+//                     children: [
+//                       SizedBox(height: width * .1),
+//                       SizedBox(height: width * .3),
+//                       SizedBox(
+//                         width: width * .75,
+//                         height: width * .5,
+//                         child: Center(
+//                           child: Stack(
+//                             children: [
+//                               Column(
+//                                 mainAxisAlignment: MainAxisAlignment.center,
+//                                 crossAxisAlignment: CrossAxisAlignment.center,
+//                                 children: [
+//                                   Center(
+//                                     child: Container(
+//                                       width: width * .5,
+//                                       decoration: BoxDecoration(
+//                                         color: Colors.white,
+//                                         borderRadius:
+//                                             BorderRadius.circular(width * .025),
+//                                         boxShadow: [
+//                                           BoxShadow(
+//                                             color: Colors.black12,
+//                                             blurRadius: width * .02,
+//                                             offset: Offset(
+//                                                 width * .01, width * .0125),
+//                                           )
+//                                         ],
+//                                       ),
+//                                       child: Padding(
+//                                         padding: EdgeInsets.all(width * .01),
+//                                         child: Text(
+//                                           "Please use current location or Request location for accurate location",
+//                                           style:
+//                                               TextStyle(fontSize: width * .025),
+//                                         ),
+//                                       ),
+//                                     ),
+//                                   ),
+//                                   SizedBox(
+//                                     height: height * .1,
+//                                   ),
+//                                   // How to use
+//                                   Container(
+//                                     width: width * .75,
+//                                     decoration: BoxDecoration(
+//                                       color: Colors.white,
+//                                       borderRadius:
+//                                           BorderRadius.circular(width * .025),
+//                                       boxShadow: [
+//                                         BoxShadow(
+//                                           color: Colors.black12,
+//                                           blurRadius: width * .02,
+//                                           offset: Offset(
+//                                               width * .01, width * .0125),
+//                                         )
+//                                       ],
+//                                     ),
+//                                     child: Padding(
+//                                       padding: EdgeInsets.all(width * .02),
+//                                       child: Column(
+//                                         crossAxisAlignment:
+//                                             CrossAxisAlignment.start,
+//                                         children: [
+//                                           Text(
+//                                             "How to use ?",
+//                                             style: TextStyle(
+//                                               fontSize: width * .03,
+//                                               fontWeight: FontWeight.w500,
+//                                             ),
+//                                           ),
+//                                           Text(
+//                                             'Tap the field to search and select locations. Use "Add Destination" to insert more stops.',
+//                                             style: TextStyle(
+//                                               fontSize: width * .0275,
+//                                             ),
+//                                           ),
+//                                         ],
+//                                       ),
+//                                     ),
+//                                   ),
+//                                 ],
+//                               ),
+//                               Align(
+//                                 alignment: Alignment.topRight,
+//                                 child: Padding(
+//                                   padding: EdgeInsets.only(
+//                                     top: height * .05,
+//                                     right: width * .025,
+//                                   ),
+//                                   child: Image.asset(
+//                                     ImageConstant.deliveryman2,
+//                                     height: width * .25,
+//                                   ),
+//                                 ),
+//                               )
+//                             ],
+//                           ),
+//                         ),
+//                       ),
+
+//                       // ───────── PICKUP ─────────
+//                       SizedBox(height: width * .1),
+//                       Row(
+//                         children: [
+//                           Text(
+//                             "Enter PickUp Details",
+//                             style: TextStyle(
+//                               fontWeight: FontWeight.w500,
+//                               fontSize: width * .035,
+//                             ),
+//                           ),
+//                         ],
+//                       ),
+//                       SizedBox(height: width * .02),
+//                       Row(
+//                         mainAxisAlignment: MainAxisAlignment.center,
+//                         children: [
+//                           // dot
+//                           Padding(
+//                             padding: EdgeInsets.only(right: width * .025),
+//                             child: Container(
+//                               width: width * 0.04,
+//                               height: width * 0.04,
+//                               decoration: BoxDecoration(
+//                                 border: Border.all(
+//                                   width: width * .005,
+//                                   color: Colors.black.withOpacity(.25),
+//                                 ),
+//                                 color: Colors.green,
+//                                 shape: BoxShape.circle,
+//                               ),
+//                               child: Center(
+//                                 child: Container(
+//                                   width: width * 0.02,
+//                                   height: width * 0.02,
+//                                   decoration: BoxDecoration(
+//                                     color: Colors.black.withOpacity(0.5),
+//                                     shape: BoxShape.circle,
+//                                   ),
+//                                 ),
+//                               ),
+//                             ),
+//                           ),
+//                           // SizedBox(width: ,),
+
+//                           // field (navigate to place search page)
+//                           GestureDetector(
+//                             onTap: () async {
+//                               await Navigator.push(
+//                                 context,
+//                                 CupertinoPageRoute(
+//                                   builder: (_) => D2dPlaceSearchPage(
+//                                     controller: fromController,
+//                                     accentColor: Colors.green,
+//                                     label: "Pickup",
+//                                   ),
+//                                 ),
+//                               );
+//                               setState(() {});
+//                             },
+//                             child: Container(
+//                               height: width * .125,
+//                               width: width * .85,
+//                               padding: EdgeInsets.only(left: width * 0.03),
+//                               decoration: BoxDecoration(
+//                                 color: Colors.white,
+//                                 borderRadius:
+//                                     BorderRadius.circular(width * 0.03),
+//                               ),
+//                               child: Row(
+//                                 children: [
+//                                   Expanded(
+//                                     child: Text(
+//                                       fromController.text.isEmpty
+//                                           ? "Enter PickUp location"
+//                                           : fromController.text,
+//                                       style: TextStyle(
+//                                         color: fromController.text.isEmpty
+//                                             ? Colors.black.withOpacity(.5)
+//                                             : Colors.black,
+//                                         fontSize: width * 0.035,
+//                                       ),
+//                                     ),
+//                                   ),
+//                                   Padding(
+//                                     padding: EdgeInsets.all(width * .01),
+//                                     child: GestureDetector(
+//                                       onTap: () {
+//                                         openRequestLocationSheet(
+//                                           context,
+//                                           "pickup",
+//                                         );
+//                                       },
+//                                       child: Container(
+//                                         height: double.infinity,
+//                                         width: width * .225,
+//                                         decoration: BoxDecoration(
+//                                           color: ColorConstant.greenColor
+//                                               .withOpacity(.9),
+//                                           borderRadius: BorderRadius.circular(
+//                                             width * 0.02,
+//                                           ),
+//                                         ),
+//                                         child: Center(
+//                                           child: Text(
+//                                             "Request\nLocation",
+//                                             textAlign: TextAlign.center,
+//                                             style: TextStyle(
+//                                               fontSize: width * .03,
+//                                               fontWeight: FontWeight.w500,
+//                                               color: Colors.white,
+//                                             ),
+//                                           ),
+//                                         ),
+//                                       ),
+//                                     ),
+//                                   ),
+//                                 ],
+//                               ),
+//                             ),
+//                           ),
+//                         ],
+//                       ),
+
+//                       // ───────── DESTINATIONS (ListView.builder) ─────────
+//                       if (fromController.text.trim().isNotEmpty) ...[
+//                         SizedBox(height: width * .05),
+//                         Row(
+//                           children: [
+//                             Text(
+//                               "Enter Destination Details",
+//                               style: TextStyle(
+//                                 fontWeight: FontWeight.w500,
+//                                 fontSize: width * .035,
+//                               ),
+//                             ),
+//                           ],
+//                         ),
+//                         SizedBox(height: width * .02),
+
+//                         // Builder with shrinkWrap
+//                         ListView.builder(
+//                           shrinkWrap: true,
+//                           physics: const NeverScrollableScrollPhysics(),
+//                           itemCount: _destControllers.length,
+//                           itemBuilder: (context, index) {
+//                             final toController = _destControllers[index];
+//                             final bool isLast =
+//                                 index == _destControllers.length - 1;
+//                             final bool isFirst = index == 0;
+
+//                             final double topSegH =
+//                                 height * .02; // same height as your dotted top
+//                             final double bottomSegH =
+//                                 height * .03; // your existing bottom height
+
+//                             void _insertAt(int i) {
+//                               setState(() {
+//                                 _destControllers.insert(
+//                                     i, TextEditingController());
+//                               });
+//                             }
+
+//                             void _removeAt(int i) {
+//                               setState(() {
+//                                 _destControllers.removeAt(i);
+//                               });
+//                             }
+
+//                             void _showSnack(String msg) {
+//                               ScaffoldMessenger.of(context).showSnackBar(
+//                                 SnackBar(
+//                                   content: Text(msg),
+//                                   behavior: SnackBarBehavior.floating,
+//                                   duration: const Duration(seconds: 1),
+//                                   margin: EdgeInsets.all(width * .03),
+//                                   shape: RoundedRectangleBorder(
+//                                     borderRadius:
+//                                         BorderRadius.circular(width * .02),
+//                                   ),
+//                                 ),
+//                               );
+//                             }
+
+//                             return Padding(
+//                               padding: EdgeInsets.zero,
+//                               child: Column(
+//                                 crossAxisAlignment: CrossAxisAlignment.center,
+//                                 children: [
+//                                   // ───────── Add Stop ABOVE this row ─────────
+//                                   SizedBox(
+//                                     child: Row(
+//                                       mainAxisAlignment:
+//                                           MainAxisAlignment.start,
+//                                       children: [
+//                                         // Left lead-in: hide dots for first index, keep spacing
+//                                         if (!isFirst)
+//                                           Padding(
+//                                             padding: EdgeInsets.only(
+//                                                 left: width * 0.025),
+//                                             child: DottedBorder(
+//                                               color: Colors.black54,
+//                                               strokeWidth: width * .0025,
+//                                               dashPattern: const [4, 3],
+//                                               strokeCap: StrokeCap.round,
+//                                               padding: EdgeInsets.zero,
+//                                               customPath: (size) => Path()
+//                                                 ..moveTo(0, 0)
+//                                                 ..lineTo(0, size.height),
+//                                               child: SizedBox(
+//                                                 width: width * .05,
+//                                                 height: height * .0375,
+//                                               ),
+//                                             ),
+//                                           )
+//                                         else
+//                                           Padding(
+//                                             padding: EdgeInsets.only(
+//                                                 left: width * 0.025),
+//                                             child: SizedBox(
+//                                               width: width * .05,
+//                                               height: height * .0375,
+//                                             ),
+//                                           ),
+//                                         SizedBox(width: width * .025),
+
+//                                         // Add Stop button (GLOBAL guard: all live destinations must be filled)
+//                                         GestureDetector(
+//                                           onTap: () {
+//                                             // Check every current destination has data
+//                                             final int firstMissing =
+//                                                 _destControllers
+//                                                     .toList()
+//                                                     .indexWhere((c) =>
+//                                                         c.text.trim().isEmpty);
+
+//                                             if (firstMissing != -1) {
+//                                               _showSnack(
+//                                                   "Please enter Destination ${firstMissing + 1} first.");
+//                                               return;
+//                                             }
+
+//                                             // All fields filled → insert ABOVE (before this row), as in your original code
+//                                             _insertAt(index);
+//                                           },
+//                                           child: Padding(
+//                                             padding: EdgeInsets.only(
+//                                                 bottom: width * 0.025),
+//                                             child: Container(
+//                                               padding: EdgeInsets.symmetric(
+//                                                 vertical: width * .0125,
+//                                                 horizontal: width * .04,
+//                                               ),
+//                                               decoration: BoxDecoration(
+//                                                 color: Colors.black12,
+//                                                 borderRadius:
+//                                                     BorderRadius.circular(
+//                                                         width * .025),
+//                                               ),
+//                                               child: Row(
+//                                                 mainAxisSize: MainAxisSize.min,
+//                                                 children: [
+//                                                   Icon(Icons.add,
+//                                                       size: width * .05,
+//                                                       color: Colors.black54),
+//                                                   SizedBox(width: width * .01),
+//                                                   Text(
+//                                                     "Add Stop",
+//                                                     style: TextStyle(
+//                                                       color: Colors.black54,
+//                                                       fontSize: width * .035,
+//                                                       fontWeight:
+//                                                           FontWeight.bold,
+//                                                     ),
+//                                                   ),
+//                                                 ],
+//                                               ),
+//                                             ),
+//                                           ),
+//                                         ),
+//                                       ],
+//                                     ),
+//                                   ),
+
+//                                   // ───────── Row: left rail + destination card + (outside) delete ─────────
+//                                   Row(
+//                                     crossAxisAlignment:
+//                                         CrossAxisAlignment.start,
+//                                     mainAxisAlignment: MainAxisAlignment.center,
+//                                     children: [
+//                                       // Left rail
+//                                       Column(
+//                                         crossAxisAlignment:
+//                                             CrossAxisAlignment.start,
+//                                         children: [
+//                                           // TOP segment: spacer for first, dotted for others
+//                                           Padding(
+//                                             padding: EdgeInsets.only(
+//                                                 left: width * 0.025),
+//                                             child: isFirst
+//                                                 ? SizedBox(
+//                                                     width: width * .05,
+//                                                     height: topSegH)
+//                                                 : DottedBorder(
+//                                                     color: Colors.black54,
+//                                                     strokeWidth: width * .0025,
+//                                                     dashPattern: const [4, 3],
+//                                                     strokeCap: StrokeCap.round,
+//                                                     padding: EdgeInsets.zero,
+//                                                     customPath: (size) => Path()
+//                                                       ..moveTo(0, 0)
+//                                                       ..lineTo(0, size.height),
+//                                                     child: SizedBox(
+//                                                         width: width * .05,
+//                                                         height: topSegH),
+//                                                   ),
+//                                           ),
+
+//                                           // RED DOT
+//                                           Padding(
+//                                             padding: EdgeInsets.only(
+//                                                 left: width * 0.005),
+//                                             child: Container(
+//                                               width: width * 0.04,
+//                                               height: width * 0.04,
+//                                               decoration: BoxDecoration(
+//                                                 border: Border.all(
+//                                                   width: width * .005,
+//                                                   color: Colors.black
+//                                                       .withOpacity(.25),
+//                                                 ),
+//                                                 color: Colors.redAccent[200],
+//                                                 shape: BoxShape.circle,
+//                                               ),
+//                                               child: Center(
+//                                                 child: Container(
+//                                                   width: width * 0.02,
+//                                                   height: width * 0.02,
+//                                                   decoration: BoxDecoration(
+//                                                     color: Colors.black
+//                                                         .withOpacity(0.5),
+//                                                     shape: BoxShape.circle,
+//                                                   ),
+//                                                 ),
+//                                               ),
+//                                             ),
+//                                           ),
+
+//                                           // BOTTOM segment — only if NOT last
+//                                           if (!isLast)
+//                                             Padding(
+//                                               padding: EdgeInsets.only(
+//                                                   left: width * 0.025),
+//                                               child: DottedBorder(
+//                                                 color: Colors.black54,
+//                                                 strokeWidth: width * .0025,
+//                                                 dashPattern: const [4, 3],
+//                                                 strokeCap: StrokeCap.round,
+//                                                 padding: EdgeInsets.zero,
+//                                                 customPath: (size) => Path()
+//                                                   ..moveTo(0, 0)
+//                                                   ..lineTo(0, size.height),
+//                                                 child: SizedBox(
+//                                                     width: width * .05,
+//                                                     height: bottomSegH),
+//                                               ),
+//                                             ),
+//                                         ],
+//                                       ),
+
+//                                       SizedBox(width: width * .02),
+
+//                                       // Destination card (Flexible to avoid overflow)
+//                                       Expanded(
+//                                         child: GestureDetector(
+//                                           onTap: () async {
+//                                             await Navigator.push(
+//                                               context,
+//                                               CupertinoPageRoute(
+//                                                 builder: (_) =>
+//                                                     D2dPlaceSearchPage(
+//                                                   controller: toController,
+//                                                   accentColor: Colors.redAccent,
+//                                                   label:
+//                                                       "Destination ${index + 1}",
+//                                                 ),
+//                                               ),
+//                                             );
+//                                             setState(() {});
+//                                           },
+//                                           child: Container(
+//                                             height: width * .125,
+//                                             padding: EdgeInsets.only(
+//                                               left: width * 0.03,
+//                                               right: width * .01,
+//                                             ),
+//                                             decoration: BoxDecoration(
+//                                               color: Colors.white,
+//                                               borderRadius:
+//                                                   BorderRadius.circular(
+//                                                       width * 0.03),
+//                                             ),
+//                                             child: Row(
+//                                               children: [
+//                                                 Expanded(
+//                                                   child: Text(
+//                                                     toController.text.isEmpty
+//                                                         ? "Enter Destination location"
+//                                                         : toController.text,
+//                                                     maxLines: 2,
+//                                                     overflow:
+//                                                         TextOverflow.ellipsis,
+//                                                     style: TextStyle(
+//                                                       color: toController
+//                                                               .text.isEmpty
+//                                                           ? Colors.black
+//                                                               .withOpacity(.5)
+//                                                           : Colors.black,
+//                                                       fontSize: width * 0.035,
+//                                                     ),
+//                                                   ),
+//                                                 ),
+//                                                 GestureDetector(
+//                                                   onTap: () =>
+//                                                       openRequestLocationSheet(
+//                                                           context, "drop"),
+//                                                   child: Padding(
+//                                                     padding: EdgeInsets.all(
+//                                                         width * .01),
+//                                                     child: Container(
+//                                                       height: double.infinity,
+//                                                       width: width * .2,
+//                                                       decoration: BoxDecoration(
+//                                                         color: ColorConstant
+//                                                             .greenColor
+//                                                             .withOpacity(.9),
+//                                                         borderRadius:
+//                                                             BorderRadius
+//                                                                 .circular(
+//                                                                     width *
+//                                                                         0.02),
+//                                                       ),
+//                                                       child: Center(
+//                                                         child: Text(
+//                                                           "Request\nLocation",
+//                                                           textAlign:
+//                                                               TextAlign.center,
+//                                                           style: TextStyle(
+//                                                             fontSize:
+//                                                                 width * .028,
+//                                                             fontWeight:
+//                                                                 FontWeight.w600,
+//                                                             color: Colors.white,
+//                                                           ),
+//                                                         ),
+//                                                       ),
+//                                                     ),
+//                                                   ),
+//                                                 ),
+//                                               ],
+//                                             ),
+//                                           ),
+//                                         ),
+//                                       ),
+
+//                                       SizedBox(width: width * .015),
+
+//                                       // DELETE — show only if there are 2+ destinations
+//                                       if (_destControllers.length > 1)
+//                                         GestureDetector(
+//                                           onTap: () => _removeAt(index),
+//                                           child: Container(
+//                                             height: width * .125,
+//                                             width: width * .1,
+//                                             decoration: BoxDecoration(
+//                                               color: Colors.redAccent
+//                                                   .withOpacity(.12),
+//                                               borderRadius:
+//                                                   BorderRadius.circular(
+//                                                       width * .02),
+//                                               border: Border.all(
+//                                                 color: Colors.redAccent
+//                                                     .withOpacity(.4),
+//                                                 width: width * .002,
+//                                               ),
+//                                             ),
+//                                             child: Icon(
+//                                               Icons.delete_outline,
+//                                               size: width * .06,
+//                                               color: Colors.redAccent,
+//                                             ),
+//                                           ),
+//                                         ),
+//                                     ],
+//                                   ),
+//                                 ],
+//                               ),
+//                             );
+//                           },
+//                         ),
+//                       ],
+
+//                       // NEXT BUTTON
+//                       SizedBox(height: width * .08),
+//                       GestureDetector(
+//                         onTap: _nextPage,
+//                         child: Container(
+//                           width: width * .4,
+//                           padding: EdgeInsets.symmetric(
+//                             vertical: width * .025,
+//                           ),
+//                           decoration: BoxDecoration(
+//                             color: Colors.blue,
+//                             borderRadius: BorderRadius.circular(width * .025),
+//                             boxShadow: [
+//                               BoxShadow(
+//                                 color: Colors.black26,
+//                                 blurRadius: width * .02,
+//                                 offset: Offset(width * .01, width * .0125),
+//                               ),
+//                             ],
+//                           ),
+//                           child: Center(
+//                             child: Text(
+//                               "Next",
+//                               style: TextStyle(
+//                                 color: Colors.white,
+//                                 fontSize: width * .04,
+//                                 fontWeight: FontWeight.bold,
+//                               ),
+//                             ),
+//                           ),
+//                         ),
+//                       ),
+
+//                       SizedBox(height: width * .5),
+//                     ],
+//                   ),
+//                 ),
+//               ),
+//             ),
+//           ),
+//         ),
+//       ),
+//     );
+//   }
+// }
+
+////////////////////////////////////////////////
+
+// import 'dart:async';
+
+// import 'package:cloud_firestore/cloud_firestore.dart';
+// import 'package:dotted_border/dotted_border.dart';
+// import 'package:drivex/core/constants/color_constant.dart';
+// import 'package:drivex/core/constants/imageConstants.dart';
+// import 'package:drivex/feature/bottomNavigation/pages/D2D/D2D_placeSearchPage.dart';
+// import 'package:flutter/cupertino.dart';
+// import 'package:flutter/material.dart';
+// import 'package:flutter/services.dart';
+// import 'package:share_plus/share_plus.dart';
+// import 'package:uuid/uuid.dart';
+
+// class D2DPage01 extends StatefulWidget {
+//   const D2DPage01({super.key});
+
+//   @override
+//   State<D2DPage01> createState() => _D2DPage01State();
+// }
+
+// class _D2DPage01State extends State<D2DPage01> {
+//   String? tripId;
+//   StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>? tripSub;
+
+//   Map<String, double>? pickupCoordinates;
+//   Map<String, double>? dropCoordinates;
+
+//   // Pickup controller
+//   final TextEditingController fromController = TextEditingController();
+
+//   // Dynamic destination controllers (start with one)
+//   final List<TextEditingController> _destControllers = [
+//     TextEditingController(),
+//   ];
+
+//   @override
+//   void initState() {
+//     super.initState();
+//     _createTripDocument();
+
+//     // show/hide Destinations dynamically + clear Destinations when Pickup cleared
+//     fromController.addListener(() {
+//       final hasPickup = fromController.text.trim().isNotEmpty;
+//       if (!hasPickup) {
+//         // (Optional) clear destination values when pickup removed
+//         for (final c in _destControllers) {
+//           c.clear();
+//         }
+//       }
+//       if (mounted) setState(() {}); // rebuild to update visibility
+//     });
+//   }
+
+//   // UI helper
+//   void _showSnackBar(BuildContext context, String msg) {
+//     ScaffoldMessenger.of(context).showSnackBar(
+//       SnackBar(
+//         content: Text(msg),
+//         behavior: SnackBarBehavior.floating,
+//         duration: const Duration(seconds: 1),
+//       ),
+//     );
+//   }
+
+//   // Insert a new destination controller (optionally after an index)
+//   void _addDestination({int? afterIndex}) {
+//     setState(() {
+//       final c = TextEditingController();
+//       if (afterIndex == null ||
+//           afterIndex < 0 ||
+//           afterIndex >= _destControllers.length) {
+//         _destControllers.add(c);
+//       } else {
+//         _destControllers.insert(afterIndex + 1, c);
+//       }
+//     });
+//   }
+
+//   // Remove a destination (dispose controller to avoid leaks)
+//   void _removeDestination(int index) {
+//     if (_destControllers.length == 1) {
+//       _showSnackBar(context, "At least one destination is required.");
+//       return;
+//     }
+//     setState(() {
+//       final c = _destControllers.removeAt(index);
+//       c.dispose();
+//     });
+//   }
+
+//   void openRequestLocationSheet(BuildContext context, String slot) {
+//     showCupertinoModalPopup(
+//       context: context,
+//       barrierColor: Colors.black.withOpacity(.35),
+//       builder: (ctx) {
+//         Future<Map<String, dynamic>>? linkFuture;
+
+//         return StatefulBuilder(
+//           builder: (ctx, setSheet) {
+//             linkFuture ??= _sendLocationRequest(slot);
+//             final size = MediaQuery.of(ctx).size;
+//             final width = size.width;
+//             final height = size.height;
+
+//             return Material(
+//               color: Colors.transparent,
+//               child: SafeArea(
+//                 top: false,
+//                 child: Align(
+//                   alignment: Alignment.bottomCenter,
+//                   child: Container(
+//                     width: width,
+//                     height: height * .65,
+//                     decoration: BoxDecoration(
+//                       color: Colors.white,
+//                       borderRadius: BorderRadius.vertical(
+//                         top: Radius.circular(width * .05),
+//                       ),
+//                     ),
+//                     child: Padding(
+//                       padding: EdgeInsets.symmetric(
+//                         horizontal: width * .05,
+//                         vertical: width * .04,
+//                       ),
+//                       child: Column(
+//                         crossAxisAlignment: CrossAxisAlignment.start,
+//                         children: [
+//                           // drag handle
+//                           Center(
+//                             child: Container(
+//                               width: width * .18,
+//                               height: width * .013,
+//                               decoration: BoxDecoration(
+//                                 color: Colors.black12,
+//                                 borderRadius:
+//                                     BorderRadius.circular(width * .01),
+//                               ),
+//                             ),
+//                           ),
+//                           SizedBox(height: width * .035),
+//                           Row(
+//                             children: [
+//                               Expanded(
+//                                 child: Text(
+//                                   "Request Location",
+//                                   style: TextStyle(
+//                                     fontSize: width * .05,
+//                                     fontWeight: FontWeight.w700,
+//                                   ),
+//                                 ),
+//                               ),
+//                               CupertinoButton(
+//                                 padding: EdgeInsets.zero,
+//                                 onPressed: () => Navigator.pop(ctx),
+//                                 child: Icon(
+//                                   CupertinoIcons.xmark,
+//                                   size: width * .06,
+//                                 ),
+//                               )
+//                             ],
+//                           ),
+//                           SizedBox(height: width * .01),
+//                           Text(
+//                             'Share the link below to get the ${slot.toUpperCase()} location.',
+//                             style: TextStyle(
+//                               fontSize: width * .0325,
+//                               color: Colors.black54,
+//                             ),
+//                           ),
+//                           SizedBox(height: width * .04),
+//                           Expanded(
+//                             child: FutureBuilder<Map<String, dynamic>>(
+//                               future: linkFuture,
+//                               builder: (ctx, snap) {
+//                                 if (snap.connectionState ==
+//                                     ConnectionState.waiting) {
+//                                   return Center(
+//                                     child: Column(
+//                                       mainAxisSize: MainAxisSize.min,
+//                                       children: [
+//                                         const CupertinoActivityIndicator(
+//                                             radius: 14),
+//                                         SizedBox(height: width * .03),
+//                                         Text(
+//                                           "Generating secure link…",
+//                                           style: TextStyle(
+//                                             fontSize: width * .034,
+//                                             color: Colors.black54,
+//                                           ),
+//                                         ),
+//                                       ],
+//                                     ),
+//                                   );
+//                                 }
+//                                 if (snap.hasError) {
+//                                   return Column(
+//                                     mainAxisAlignment: MainAxisAlignment.center,
+//                                     children: [
+//                                       Icon(
+//                                         CupertinoIcons.exclamationmark_triangle,
+//                                         color: Colors.red,
+//                                         size: width * .12,
+//                                       ),
+//                                       SizedBox(height: width * .02),
+//                                       Text(
+//                                         "Couldn't create link",
+//                                         style: TextStyle(
+//                                           fontSize: width * .042,
+//                                           fontWeight: FontWeight.w600,
+//                                         ),
+//                                       ),
+//                                       SizedBox(height: width * .02),
+//                                       Text(
+//                                         "${snap.error}",
+//                                         textAlign: TextAlign.center,
+//                                         style: TextStyle(
+//                                           fontSize: width * .032,
+//                                           color: Colors.black54,
+//                                         ),
+//                                       ),
+//                                       SizedBox(height: width * .04),
+//                                       CupertinoButton.filled(
+//                                         onPressed: () => setSheet(
+//                                           () => linkFuture =
+//                                               _sendLocationRequest(slot),
+//                                         ),
+//                                         child: const Text("Try again"),
+//                                       ),
+//                                     ],
+//                                   );
+//                                 }
+
+//                                 final data = snap.data!;
+//                                 final link = data['link'] as String;
+//                                 final expiresAt = data['expiresAt'] as String?;
+
+//                                 return Column(
+//                                   crossAxisAlignment: CrossAxisAlignment.start,
+//                                   children: [
+//                                     Container(
+//                                       padding: EdgeInsets.all(width * .035),
+//                                       decoration: BoxDecoration(
+//                                         color: const Color(0xFFF5F7FA),
+//                                         border: Border.all(
+//                                           color: const Color(0xFFE5E9F0),
+//                                         ),
+//                                         borderRadius:
+//                                             BorderRadius.circular(width * .03),
+//                                       ),
+//                                       child: Column(
+//                                         crossAxisAlignment:
+//                                             CrossAxisAlignment.start,
+//                                         children: [
+//                                           Text(
+//                                             "Share this link",
+//                                             style: TextStyle(
+//                                               fontSize: width * .035,
+//                                               color: Colors.black54,
+//                                             ),
+//                                           ),
+//                                           SizedBox(height: width * .02),
+//                                           SelectableText(
+//                                             link,
+//                                             style: TextStyle(
+//                                               fontSize: width * .034,
+//                                               fontFamily: 'monospace',
+//                                             ),
+//                                           ),
+//                                           if (expiresAt != null) ...[
+//                                             SizedBox(height: width * .02),
+//                                             Text(
+//                                               "Expires: $expiresAt",
+//                                               style: TextStyle(
+//                                                 fontSize: width * .03,
+//                                                 color: Colors.black45,
+//                                               ),
+//                                             ),
+//                                           ],
+//                                           SizedBox(height: width * .02),
+//                                           Row(
+//                                             children: [
+//                                               // Copy
+//                                               Expanded(
+//                                                 child: CupertinoButton(
+//                                                   color:
+//                                                       const Color(0xFFE8F3FF),
+//                                                   padding: EdgeInsets.symmetric(
+//                                                     vertical: width * .028,
+//                                                   ),
+//                                                   onPressed: () async {
+//                                                     await Clipboard.setData(
+//                                                       ClipboardData(text: link),
+//                                                     );
+//                                                     if (mounted) {
+//                                                       ScaffoldMessenger.of(
+//                                                               context)
+//                                                           .showSnackBar(
+//                                                         const SnackBar(
+//                                                           content: Text(
+//                                                               "Link copied"),
+//                                                           behavior:
+//                                                               SnackBarBehavior
+//                                                                   .floating,
+//                                                           duration: Duration(
+//                                                               seconds: 1),
+//                                                         ),
+//                                                       );
+//                                                     }
+//                                                   },
+//                                                   child: Row(
+//                                                     mainAxisAlignment:
+//                                                         MainAxisAlignment
+//                                                             .center,
+//                                                     children: [
+//                                                       Icon(
+//                                                         CupertinoIcons
+//                                                             .doc_on_doc,
+//                                                         size: width * .05,
+//                                                         color: const Color(
+//                                                             0xFF1976D2),
+//                                                       ),
+//                                                       SizedBox(
+//                                                           width: width * .02),
+//                                                       Text(
+//                                                         "Copy link",
+//                                                         style: TextStyle(
+//                                                           fontSize:
+//                                                               width * .035,
+//                                                           fontWeight:
+//                                                               FontWeight.w700,
+//                                                           color: const Color(
+//                                                               0xFF1976D2),
+//                                                         ),
+//                                                       ),
+//                                                     ],
+//                                                   ),
+//                                                 ),
+//                                               ),
+//                                               SizedBox(width: width * .03),
+//                                               // Share
+//                                               Expanded(
+//                                                 child: CupertinoButton.filled(
+//                                                   padding: EdgeInsets.symmetric(
+//                                                     vertical: width * .028,
+//                                                   ),
+//                                                   onPressed: () async {
+//                                                     await Share.share(
+//                                                       link,
+//                                                       subject:
+//                                                           "Share your ${slot.toUpperCase()} location",
+//                                                     );
+//                                                   },
+//                                                   child: Row(
+//                                                     mainAxisAlignment:
+//                                                         MainAxisAlignment
+//                                                             .center,
+//                                                     children: [
+//                                                       Icon(CupertinoIcons.share,
+//                                                           size: width * .05),
+//                                                       SizedBox(
+//                                                           width: width * .02),
+//                                                       Text(
+//                                                         "Share",
+//                                                         style: TextStyle(
+//                                                           fontSize:
+//                                                               width * .035,
+//                                                           fontWeight:
+//                                                               FontWeight.w700,
+//                                                         ),
+//                                                       ),
+//                                                     ],
+//                                                   ),
+//                                                 ),
+//                                               ),
+//                                             ],
+//                                           ),
+//                                         ],
+//                                       ),
+//                                     ),
+//                                     SizedBox(height: width * .04),
+
+//                                     // Recent Requests placeholder
+//                                     Text(
+//                                       "Recent Request",
+//                                       style: TextStyle(
+//                                         fontSize: width * .036,
+//                                         fontWeight: FontWeight.w600,
+//                                       ),
+//                                     ),
+//                                     SizedBox(height: width * .025),
+//                                     Container(
+//                                       height: width * .25,
+//                                       decoration: BoxDecoration(
+//                                         color: const Color(0xFFF5F7FA),
+//                                         border:
+//                                             Border.all(color: Colors.black12),
+//                                         borderRadius:
+//                                             BorderRadius.circular(width * .03),
+//                                       ),
+//                                       child: Center(
+//                                         child: Row(
+//                                           mainAxisAlignment:
+//                                               MainAxisAlignment.center,
+//                                           children: [
+//                                             Icon(
+//                                               CupertinoIcons.location_solid,
+//                                               color: Colors.redAccent,
+//                                               size: width * .06,
+//                                             ),
+//                                             SizedBox(width: width * .03),
+//                                             Text(
+//                                               "No recent Location",
+//                                               style: TextStyle(
+//                                                 fontSize: width * .04,
+//                                                 color: Colors.black54,
+//                                               ),
+//                                             ),
+//                                           ],
+//                                         ),
+//                                       ),
+//                                     ),
+//                                     SizedBox(height: width * .025),
+//                                     SizedBox(
+//                                       width: double.infinity,
+//                                       child: CupertinoButton(
+//                                         color: const Color(0xFF1E88E5),
+//                                         onPressed: () => Navigator.pop(ctx),
+//                                         child: Text(
+//                                           "Done",
+//                                           style: TextStyle(
+//                                             fontSize: width * .04,
+//                                             color: Colors.white,
+//                                             fontWeight: FontWeight.w700,
+//                                           ),
+//                                         ),
+//                                       ),
+//                                     ),
+//                                   ],
+//                                 );
+//                               },
+//                             ),
+//                           ),
+//                         ],
+//                       ),
+//                     ),
+//                   ),
+//                 ),
+//               ),
+//             );
+//           },
+//         );
+//       },
+//     );
+//   }
+
+//   Future<void> _createTripDocument() async {
+//     final docRef =
+//         await FirebaseFirestore.instance.collection("locationRequests").add({
+//       "pickupLocation": null,
+//       "dropLocation": null,
+//       "senderName": "Kamal",
+//       "senderPhone": "9876543210",
+//       "createdAt": FieldValue.serverTimestamp(),
+//     });
+
+//     tripId = docRef.id;
+//     _listenToTripUpdates();
+//   }
+
+//   void _listenToTripUpdates() {
+//     tripSub?.cancel();
+//     final id = tripId;
+//     if (id == null) return;
+//     tripSub = FirebaseFirestore.instance
+//         .collection("locationRequests")
+//         .doc(id)
+//         .snapshots()
+//         .listen((doc) {
+//       if (!doc.exists) return;
+//       final data = doc.data();
+//       if (data == null) return;
+
+//       // pickup
+//       if (data['pickupLocation'] != null) {
+//         final coords = Map<String, dynamic>.from(data['pickupLocation']);
+//         setState(() {
+//           pickupCoordinates = {
+//             "lat": (coords['lat'] as num).toDouble(),
+//             "lng": (coords['lng'] as num).toDouble()
+//           };
+//           fromController.text =
+//               "${pickupCoordinates!['lat']}, ${pickupCoordinates!['lng']}";
+//         });
+//       }
+
+//       // drop → populate the first destination field
+//       if (data['dropLocation'] != null) {
+//         final coords = Map<String, dynamic>.from(data['dropLocation']);
+//         setState(() {
+//           dropCoordinates = {
+//             "lat": (coords['lat'] as num).toDouble(),
+//             "lng": (coords['lng'] as num).toDouble()
+//           };
+//           if (_destControllers.isNotEmpty) {
+//             _destControllers.first.text =
+//                 "${dropCoordinates!['lat']}, ${dropCoordinates!['lng']}";
+//           }
+//         });
+//       }
+//     });
+//   }
+
+//   Future<Map<String, dynamic>> _sendLocationRequest(String type) async {
+//     if (tripId == null) {
+//       await _createTripDocument(); // ensure exists
+//     }
+//     final id = tripId!;
+//     final shareId = const Uuid().v4();
+//     final expiresAtDt = DateTime.now().add(const Duration(hours: 24));
+//     final expiresAtIso = expiresAtDt.toIso8601String();
+
+//     // your deep link
+//     final link = "https://drivex-2a34e.web.app/?id=$id&type=$type&sid=$shareId";
+
+//     // log the share
+//     await FirebaseFirestore.instance
+//         .collection("locationRequests")
+//         .doc(id)
+//         .collection("shares")
+//         .doc(shareId)
+//         .set({
+//       "type": type,
+//       "link": link,
+//       "status": "sent",
+//       "createdAt": FieldValue.serverTimestamp(),
+//       "expiresAt": Timestamp.fromDate(expiresAtDt),
+//     });
+
+//     return {"link": link, "expiresAt": expiresAtIso, "shareId": shareId};
+//   }
+
+//   // Next page validation
+//   void _nextPage() {
+//     final pickup = fromController.text.trim();
+//     final dests = _destControllers.map((c) => c.text.trim()).toList();
+
+//     if (pickup.isEmpty) {
+//       _showSnackBar(context, "Please enter Pick-Up location.");
+//       return;
+//     }
+//     if (dests.any((d) => d.isEmpty)) {
+//       _showSnackBar(context, "Please fill all Destination locations.");
+//       return;
+//     }
+
+//     _showSnackBar(context, "Proceeding with ${dests.length} destination(s).");
+//     // TODO: Navigate with your data
+//   }
+
+//   @override
+//   void dispose() {
+//     fromController.dispose();
+//     for (final c in _destControllers) {
+//       c.dispose();
+//     }
+//     tripSub?.cancel();
+//     super.dispose();
+//   }
+
+//   @override
+//   Widget build(BuildContext context) {
+//     final size = MediaQuery.of(context).size;
+//     final width = size.width;
+//     final height = size.height;
+
+//     return Scaffold(
+//       backgroundColor: Colors.white,
+//       body: Container(
+//         color: ColorConstant.color1.withOpacity(.15),
+//         child: SizedBox(
+//           height: height,
+//           child: SingleChildScrollView(
+//             child: SafeArea(
+//               child: Padding(
+//                 padding: EdgeInsets.symmetric(horizontal: width * .02),
+//                 child: Center(
+//                   child: Column(
+//                     mainAxisAlignment: MainAxisAlignment.center,
+//                     crossAxisAlignment: CrossAxisAlignment.center,
+//                     children: [
+//                       SizedBox(height: width * .1),
+//                       SizedBox(height: width * .3),
+//                       SizedBox(
+//                         width: width * .75,
+//                         height: width * .5,
+//                         child: Center(
+//                           child: Stack(
+//                             children: [
+//                               Column(
+//                                 mainAxisAlignment: MainAxisAlignment.center,
+//                                 crossAxisAlignment: CrossAxisAlignment.center,
+//                                 children: [
+//                                   Center(
+//                                     child: Container(
+//                                       width: width * .5,
+//                                       decoration: BoxDecoration(
+//                                         color: Colors.white,
+//                                         borderRadius:
+//                                             BorderRadius.circular(width * .025),
+//                                         boxShadow: [
+//                                           BoxShadow(
+//                                             color: Colors.black12,
+//                                             blurRadius: width * .02,
+//                                             offset: Offset(
+//                                                 width * .01, width * .0125),
+//                                           )
+//                                         ],
+//                                       ),
+//                                       child: Padding(
+//                                         padding: EdgeInsets.all(width * .01),
+//                                         child: Text(
+//                                           "Please use current location or Request location for accurate location",
+//                                           style:
+//                                               TextStyle(fontSize: width * .025),
+//                                         ),
+//                                       ),
+//                                     ),
+//                                   ),
+//                                   SizedBox(height: height * .1),
+//                                   // How to use
+//                                   Container(
+//                                     width: width * .75,
+//                                     decoration: BoxDecoration(
+//                                       color: Colors.white,
+//                                       borderRadius:
+//                                           BorderRadius.circular(width * .025),
+//                                       boxShadow: [
+//                                         BoxShadow(
+//                                           color: Colors.black12,
+//                                           blurRadius: width * .02,
+//                                           offset: Offset(
+//                                               width * .01, width * .0125),
+//                                         )
+//                                       ],
+//                                     ),
+//                                     child: Padding(
+//                                       padding: EdgeInsets.all(width * .02),
+//                                       child: Column(
+//                                         crossAxisAlignment:
+//                                             CrossAxisAlignment.start,
+//                                         children: [
+//                                           Text(
+//                                             "How to use ?",
+//                                             style: TextStyle(
+//                                               fontSize: width * .03,
+//                                               fontWeight: FontWeight.w500,
+//                                             ),
+//                                           ),
+//                                           Text(
+//                                             'Tap the field to search and select locations. Use "Add Destination" to insert more stops.',
+//                                             style: TextStyle(
+//                                               fontSize: width * .0275,
+//                                             ),
+//                                           ),
+//                                         ],
+//                                       ),
+//                                     ),
+//                                   ),
+//                                 ],
+//                               ),
+//                               Align(
+//                                 alignment: Alignment.topRight,
+//                                 child: Padding(
+//                                   padding: EdgeInsets.only(
+//                                     top: height * .05,
+//                                     right: width * .025,
+//                                   ),
+//                                   child: Image.asset(
+//                                     ImageConstant.deliveryman2,
+//                                     height: width * .25,
+//                                   ),
+//                                 ),
+//                               )
+//                             ],
+//                           ),
+//                         ),
+//                       ),
+
+//                       // ───────── PICKUP ─────────
+//                       SizedBox(height: width * .1),
+//                       Row(
+//                         children: [
+//                           Text(
+//                             "Enter PickUp Details",
+//                             style: TextStyle(
+//                               fontWeight: FontWeight.w500,
+//                               fontSize: width * .035,
+//                             ),
+//                           ),
+//                         ],
+//                       ),
+//                       SizedBox(height: width * .02),
+//                       Row(
+//                         mainAxisAlignment: MainAxisAlignment.center,
+//                         children: [
+//                           // dot
+//                           Padding(
+//                             padding: EdgeInsets.only(right: width * .025),
+//                             child: Container(
+//                               width: width * 0.04,
+//                               height: width * 0.04,
+//                               decoration: BoxDecoration(
+//                                 border: Border.all(
+//                                   width: width * .005,
+//                                   color: Colors.black.withOpacity(.25),
+//                                 ),
+//                                 color: Colors.green,
+//                                 shape: BoxShape.circle,
+//                               ),
+//                               child: Center(
+//                                 child: Container(
+//                                   width: width * 0.02,
+//                                   height: width * 0.02,
+//                                   decoration: BoxDecoration(
+//                                     color: Colors.black.withOpacity(0.5),
+//                                     shape: BoxShape.circle,
+//                                   ),
+//                                 ),
+//                               ),
+//                             ),
+//                           ),
+//                           // field (navigate to place search page)
+//                           GestureDetector(
+//                             onTap: () async {
+//                               await Navigator.push(
+//                                 context,
+//                                 CupertinoPageRoute(
+//                                   builder: (_) => D2dPlaceSearchPage(
+//                                     controller: fromController,
+//                                     accentColor: Colors.green,
+//                                     label: "Pickup",
+//                                   ),
+//                                 ),
+//                               );
+//                               setState(() {});
+//                             },
+//                             child: Container(
+//                               height: width * .125,
+//                               width: width * .85,
+//                               padding: EdgeInsets.only(left: width * 0.03),
+//                               decoration: BoxDecoration(
+//                                 color: Colors.white,
+//                                 borderRadius:
+//                                     BorderRadius.circular(width * 0.03),
+//                               ),
+//                               child: Row(
+//                                 children: [
+//                                   Expanded(
+//                                     child: Text(
+//                                       fromController.text.isEmpty
+//                                           ? "Enter PickUp location"
+//                                           : fromController.text,
+//                                       style: TextStyle(
+//                                         color: fromController.text.isEmpty
+//                                             ? Colors.black.withOpacity(.5)
+//                                             : Colors.black,
+//                                         fontSize: width * 0.035,
+//                                       ),
+//                                     ),
+//                                   ),
+//                                   Padding(
+//                                     padding: EdgeInsets.all(width * .01),
+//                                     child: GestureDetector(
+//                                       onTap: () => openRequestLocationSheet(
+//                                         context,
+//                                         "pickup",
+//                                       ),
+//                                       child: Container(
+//                                         height: double.infinity,
+//                                         width: width * .225,
+//                                         decoration: BoxDecoration(
+//                                           color: ColorConstant.greenColor
+//                                               .withOpacity(.9),
+//                                           borderRadius: BorderRadius.circular(
+//                                             width * 0.02,
+//                                           ),
+//                                         ),
+//                                         child: Center(
+//                                           child: Text(
+//                                             "Request\nLocation",
+//                                             textAlign: TextAlign.center,
+//                                             style: TextStyle(
+//                                               fontSize: width * .03,
+//                                               fontWeight: FontWeight.w500,
+//                                               color: Colors.white,
+//                                             ),
+//                                           ),
+//                                         ),
+//                                       ),
+//                                     ),
+//                                   ),
+//                                 ],
+//                               ),
+//                             ),
+//                           ),
+//                         ],
+//                       ),
+
+//                       // ───────── DESTINATIONS (ListView.builder) ─────────
+//                       if (fromController.text.trim().isNotEmpty) ...[
+//                         SizedBox(height: width * .05),
+//                         Row(
+//                           children: [
+//                             Text(
+//                               "Enter Destination Details",
+//                               style: TextStyle(
+//                                 fontWeight: FontWeight.w500,
+//                                 fontSize: width * .035,
+//                               ),
+//                             ),
+//                           ],
+//                         ),
+//                         SizedBox(height: width * .02),
+
+//                         // Builder with shrinkWrap
+//                         ListView.builder(
+//                           shrinkWrap: true,
+//                           physics: const NeverScrollableScrollPhysics(),
+//                           itemCount: _destControllers.length,
+//                           itemBuilder: (context, index) {
+//                             final destController = _destControllers[index];
+//                             final bool isLast =
+//                                 index == _destControllers.length - 1;
+//                             final bool isFirst = index == 0;
+
+//                             final double topSegH = height * .02;
+//                             final double bottomSegH = height * .03;
+
+//                             void _insertAt(int i) {
+//                               setState(() {
+//                                 _destControllers.insert(
+//                                     i, TextEditingController());
+//                               });
+//                             }
+
+//                             void _removeAt(int i) {
+//                               setState(() {
+//                                 final c = _destControllers.removeAt(i);
+//                                 c.dispose();
+//                               });
+//                             }
+
+//                             void _showSnack(String msg) =>
+//                                 _showSnackBar(context, msg);
+
+//                             return Padding(
+//                               padding: EdgeInsets.zero,
+//                               child: Column(
+//                                 crossAxisAlignment: CrossAxisAlignment.center,
+//                                 children: [
+//                                   // ───────── Add Stop ABOVE this row ─────────
+//                                   SizedBox(
+//                                     child: Row(
+//                                       mainAxisAlignment:
+//                                           MainAxisAlignment.start,
+//                                       children: [
+//                                         // Left lead-in: hide dots for first index, keep spacing
+//                                         if (!isFirst)
+//                                           Padding(
+//                                             padding: EdgeInsets.only(
+//                                                 left: width * 0.025),
+//                                             child: DottedBorder(
+//                                               color: Colors.black54,
+//                                               strokeWidth: width * .0025,
+//                                               dashPattern: const [4, 3],
+//                                               strokeCap: StrokeCap.round,
+//                                               padding: EdgeInsets.zero,
+//                                               customPath: (size) => Path()
+//                                                 ..moveTo(0, 0)
+//                                                 ..lineTo(0, size.height),
+//                                               child: SizedBox(
+//                                                 width: width * .05,
+//                                                 height: height * .0375,
+//                                               ),
+//                                             ),
+//                                           )
+//                                         else
+//                                           Padding(
+//                                             padding: EdgeInsets.only(
+//                                                 left: width * 0.025),
+//                                             child: SizedBox(
+//                                               width: width * .05,
+//                                               height: height * .0375,
+//                                             ),
+//                                           ),
+//                                         SizedBox(width: width * .025),
+
+//                                         // Add Stop button (GLOBAL guard: all live destinations must be filled)
+//                                         GestureDetector(
+//                                           onTap: () {
+//                                             // Check every current destination has data
+//                                             final int firstMissing =
+//                                                 _destControllers.indexWhere(
+//                                                     (c) =>
+//                                                         c.text.trim().isEmpty);
+
+//                                             if (firstMissing != -1) {
+//                                               _showSnack(
+//                                                 "Please enter Destination ${firstMissing + 1} first.",
+//                                               );
+//                                               return;
+//                                             }
+
+//                                             // All fields filled → insert ABOVE (before this row), as per your original code
+//                                             _insertAt(index);
+//                                           },
+//                                           child: Padding(
+//                                             padding: EdgeInsets.only(
+//                                                 bottom: width * 0.025),
+//                                             child: Container(
+//                                               padding: EdgeInsets.symmetric(
+//                                                 vertical: width * .0125,
+//                                                 horizontal: width * .04,
+//                                               ),
+//                                               decoration: BoxDecoration(
+//                                                 color: Colors.black12,
+//                                                 borderRadius:
+//                                                     BorderRadius.circular(
+//                                                   width * .025,
+//                                                 ),
+//                                               ),
+//                                               child: Row(
+//                                                 mainAxisSize: MainAxisSize.min,
+//                                                 children: [
+//                                                   Icon(
+//                                                     Icons.add,
+//                                                     size: width * .05,
+//                                                     color: Colors.black54,
+//                                                   ),
+//                                                   SizedBox(width: width * .01),
+//                                                   Text(
+//                                                     "Add Stop",
+//                                                     style: TextStyle(
+//                                                       color: Colors.black54,
+//                                                       fontSize: width * .035,
+//                                                       fontWeight:
+//                                                           FontWeight.bold,
+//                                                     ),
+//                                                   ),
+//                                                 ],
+//                                               ),
+//                                             ),
+//                                           ),
+//                                         ),
+//                                       ],
+//                                     ),
+//                                   ),
+
+//                                   // ───────── Row: left rail + destination card + (outside) delete ─────────
+//                                   Row(
+//                                     crossAxisAlignment:
+//                                         CrossAxisAlignment.start,
+//                                     mainAxisAlignment: MainAxisAlignment.center,
+//                                     children: [
+//                                       // Left rail
+//                                       Column(
+//                                         crossAxisAlignment:
+//                                             CrossAxisAlignment.start,
+//                                         children: [
+//                                           // TOP segment: spacer for first, dotted for others
+//                                           Padding(
+//                                             padding: EdgeInsets.only(
+//                                                 left: width * 0.025),
+//                                             child: isFirst
+//                                                 ? SizedBox(
+//                                                     width: width * .05,
+//                                                     height: topSegH)
+//                                                 : DottedBorder(
+//                                                     color: Colors.black54,
+//                                                     strokeWidth: width * .0025,
+//                                                     dashPattern: const [4, 3],
+//                                                     strokeCap: StrokeCap.round,
+//                                                     padding: EdgeInsets.zero,
+//                                                     customPath: (size) => Path()
+//                                                       ..moveTo(0, 0)
+//                                                       ..lineTo(0, size.height),
+//                                                     child: SizedBox(
+//                                                       width: width * .05,
+//                                                       height: topSegH,
+//                                                     ),
+//                                                   ),
+//                                           ),
+
+//                                           // RED DOT
+//                                           Padding(
+//                                             padding: EdgeInsets.only(
+//                                                 left: width * 0.005),
+//                                             child: Container(
+//                                               width: width * 0.04,
+//                                               height: width * 0.04,
+//                                               decoration: BoxDecoration(
+//                                                 border: Border.all(
+//                                                   width: width * .005,
+//                                                   color: Colors.black
+//                                                       .withOpacity(.25),
+//                                                 ),
+//                                                 color: Colors.redAccent[200],
+//                                                 shape: BoxShape.circle,
+//                                               ),
+//                                               child: Center(
+//                                                 child: Container(
+//                                                   width: width * 0.02,
+//                                                   height: width * 0.02,
+//                                                   decoration: BoxDecoration(
+//                                                     color: Colors.black
+//                                                         .withOpacity(0.5),
+//                                                     shape: BoxShape.circle,
+//                                                   ),
+//                                                 ),
+//                                               ),
+//                                             ),
+//                                           ),
+
+//                                           // BOTTOM segment — only if NOT last
+//                                           if (!isLast)
+//                                             Padding(
+//                                               padding: EdgeInsets.only(
+//                                                   left: width * 0.025),
+//                                               child: DottedBorder(
+//                                                 color: Colors.black54,
+//                                                 strokeWidth: width * .0025,
+//                                                 dashPattern: const [4, 3],
+//                                                 strokeCap: StrokeCap.round,
+//                                                 padding: EdgeInsets.zero,
+//                                                 customPath: (size) => Path()
+//                                                   ..moveTo(0, 0)
+//                                                   ..lineTo(0, size.height),
+//                                                 child: SizedBox(
+//                                                   width: width * .05,
+//                                                   height: bottomSegH,
+//                                                 ),
+//                                               ),
+//                                             ),
+//                                         ],
+//                                       ),
+
+//                                       SizedBox(width: width * .02),
+
+//                                       // Destination card (Flexible to avoid overflow)
+//                                       Expanded(
+//                                         child: GestureDetector(
+//                                           onTap: () async {
+//                                             await Navigator.push(
+//                                               context,
+//                                               CupertinoPageRoute(
+//                                                 builder: (_) =>
+//                                                     D2dPlaceSearchPage(
+//                                                   controller: destController,
+//                                                   accentColor: Colors.redAccent,
+//                                                   label:
+//                                                       "Destination ${index + 1}",
+//                                                 ),
+//                                               ),
+//                                             );
+//                                             setState(() {});
+//                                           },
+//                                           child: Container(
+//                                             height: width * .125,
+//                                             padding: EdgeInsets.only(
+//                                               left: width * 0.03,
+//                                               right: width * .01,
+//                                             ),
+//                                             decoration: BoxDecoration(
+//                                               color: Colors.white,
+//                                               borderRadius:
+//                                                   BorderRadius.circular(
+//                                                 width * 0.03,
+//                                               ),
+//                                             ),
+//                                             child: Row(
+//                                               children: [
+//                                                 Expanded(
+//                                                   child: Text(
+//                                                     destController.text.isEmpty
+//                                                         ? "Enter Destination location"
+//                                                         : destController.text,
+//                                                     maxLines: 2,
+//                                                     overflow:
+//                                                         TextOverflow.ellipsis,
+//                                                     style: TextStyle(
+//                                                       color: destController
+//                                                               .text.isEmpty
+//                                                           ? Colors.black
+//                                                               .withOpacity(.5)
+//                                                           : Colors.black,
+//                                                       fontSize: width * 0.035,
+//                                                     ),
+//                                                   ),
+//                                                 ),
+//                                                 GestureDetector(
+//                                                   onTap: () =>
+//                                                       openRequestLocationSheet(
+//                                                     context,
+//                                                     "drop",
+//                                                   ),
+//                                                   child: Padding(
+//                                                     padding: EdgeInsets.all(
+//                                                       width * .01,
+//                                                     ),
+//                                                     child: Container(
+//                                                       height: double.infinity,
+//                                                       width: width * .2,
+//                                                       decoration: BoxDecoration(
+//                                                         color: ColorConstant
+//                                                             .greenColor
+//                                                             .withOpacity(.9),
+//                                                         borderRadius:
+//                                                             BorderRadius
+//                                                                 .circular(
+//                                                           width * 0.02,
+//                                                         ),
+//                                                       ),
+//                                                       child: Center(
+//                                                         child: Text(
+//                                                           "Request\nLocation",
+//                                                           textAlign:
+//                                                               TextAlign.center,
+//                                                           style: TextStyle(
+//                                                             fontSize:
+//                                                                 width * .028,
+//                                                             fontWeight:
+//                                                                 FontWeight.w600,
+//                                                             color: Colors.white,
+//                                                           ),
+//                                                         ),
+//                                                       ),
+//                                                     ),
+//                                                   ),
+//                                                 ),
+//                                               ],
+//                                             ),
+//                                           ),
+//                                         ),
+//                                       ),
+
+//                                       SizedBox(width: width * .015),
+
+//                                       // DELETE — show only if there are 2+ destinations
+//                                       if (_destControllers.length > 1)
+//                                         GestureDetector(
+//                                           onTap: () => _removeAt(index),
+//                                           child: Container(
+//                                             height: width * .125,
+//                                             width: width * .1,
+//                                             decoration: BoxDecoration(
+//                                               color: Colors.redAccent
+//                                                   .withOpacity(.12),
+//                                               borderRadius:
+//                                                   BorderRadius.circular(
+//                                                 width * .02,
+//                                               ),
+//                                               border: Border.all(
+//                                                 color: Colors.redAccent
+//                                                     .withOpacity(.4),
+//                                                 width: width * .002,
+//                                               ),
+//                                             ),
+//                                             child: Icon(
+//                                               Icons.delete_outline,
+//                                               size: width * .06,
+//                                               color: Colors.redAccent,
+//                                             ),
+//                                           ),
+//                                         ),
+//                                     ],
+//                                   ),
+//                                 ],
+//                               ),
+//                             );
+//                           },
+//                         ),
+//                       ],
+
+//                       // NEXT BUTTON
+//                       SizedBox(height: width * .08),
+//                       GestureDetector(
+//                         onTap: _nextPage,
+//                         child: Container(
+//                           width: width * .4,
+//                           padding: EdgeInsets.symmetric(
+//                             vertical: width * .025,
+//                           ),
+//                           decoration: BoxDecoration(
+//                             color: Colors.blue,
+//                             borderRadius: BorderRadius.circular(width * .025),
+//                             boxShadow: [
+//                               BoxShadow(
+//                                 color: Colors.black26,
+//                                 blurRadius: width * .02,
+//                                 offset: Offset(width * .01, width * .0125),
+//                               ),
+//                             ],
+//                           ),
+//                           child: Center(
+//                             child: Text(
+//                               "Next",
+//                               style: TextStyle(
+//                                 color: Colors.white,
+//                                 fontSize: width * .04,
+//                                 fontWeight: FontWeight.bold,
+//                               ),
+//                             ),
+//                           ),
+//                         ),
+//                       ),
+
+//                       SizedBox(height: width * .5),
+//                     ],
+//                   ),
+//                 ),
+//               ),
+//             ),
+//           ),
+//         ),
+//       ),
+//     );
+//   }
+// }
+
+////////////////////////////////////////////////////////////////
+
+import 'dart:async';
+import 'dart:convert';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dotted_border/dotted_border.dart';
 import 'package:drivex/core/constants/color_constant.dart';
 import 'package:drivex/core/constants/imageConstants.dart';
 import 'package:drivex/feature/bottomNavigation/pages/D2D/D2D_placeSearchPage.dart';
+import 'package:drivex/feature/bottomNavigation/pages/D2DPage_02.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:geocoding/geocoding.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:http/http.dart' as http;
+import 'package:geolocator/geolocator.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:uuid/uuid.dart';
+
+const String googleApiKey =
+    "AIzaSyD1fU_UDudvvy1HEPEoJ4Ify_YOYDlhdEY"; // one source of truth
 
 class D2DPage01 extends StatefulWidget {
   const D2DPage01({super.key});
-
   @override
   State<D2DPage01> createState() => _D2DPage01State();
 }
 
 class _D2DPage01State extends State<D2DPage01> {
-  // Pickup controller
+  // ─────────────────────────────────────────────────────────────────────────────
+  // STATE: controllers, focus, maps, trip/session
+  // ─────────────────────────────────────────────────────────────────────────────
   final TextEditingController fromController = TextEditingController();
+  final TextEditingController toController = TextEditingController();
+  final FocusNode fromFocus = FocusNode();
+  final FocusNode toFocus = FocusNode();
 
-  // Dynamic destination controllers (start with one)
-  final List<TextEditingController> _destControllers = [
-    TextEditingController(),
-  ];
+  bool get hasPickup => fromController.text.trim().isNotEmpty;
 
-  // UI helper
-  void _showSnackBar(BuildContext context, String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+  // VIA stop controllers (address text only)
+  final List<TextEditingController> _stops = [];
+
+  // extra metadata to build "route" schema
+  // pickup / drop contact info (you can wire these to UI later if needed)
+  final pickupNameCtrl = TextEditingController();
+  final pickupPhoneCtrl = TextEditingController();
+  final pickupNoteCtrl = TextEditingController();
+
+  final dropNameCtrl = TextEditingController();
+  final dropPhoneCtrl = TextEditingController();
+  final dropNoteCtrl = TextEditingController();
+
+  // stop metadata aligned to _stops
+  final List<String> _stopTypes = []; // "pick" | "drop"
+  final List<TextEditingController> _stopName = [];
+  final List<TextEditingController> _stopPhone = [];
+  final List<TextEditingController> _stopNote = [];
+
+  // coordinates cache (filled from share page / current location / geocode)
+  LatLng? pickupLatLng;
+  LatLng? dropLatLng;
+  final List<LatLng?> _stopLatLng = [];
+
+  // total tiles: pickup + stops + destination (destination only when hasPickup)
+  int get totalTiles => hasPickup ? (2 + _stops.length) : 1;
+
+  bool isFieldActive = false;
+  String activeField = ""; // "from" | "to"
+  List<dynamic> suggestions = [];
+
+  GoogleMapController? _mapController;
+
+  String? tripId;
+  StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>? tripSub;
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // LOCAL RECENTS (SharedPreferences)
+  // ─────────────────────────────────────────────────────────────────────────────
+  static const _kRecentPickupKey = 'recent_pickup_locations';
+  static const _kRecentDropKey = 'recent_drop_locations';
+
+  Future<List<Map<String, dynamic>>> _loadRecents(String slot) async {
+    final prefs = await SharedPreferences.getInstance();
+    final key = slot == 'pickup' ? _kRecentPickupKey : _kRecentDropKey;
+    final list = prefs.getStringList(key) ?? const [];
+    return list.map((s) => Map<String, dynamic>.from(jsonDecode(s))).toList();
   }
 
-  // Insert a new destination controller (optionally after an index)
-  void _addDestination({int? afterIndex}) {
-    setState(() {
-      final c = TextEditingController();
-      if (afterIndex == null ||
-          afterIndex < 0 ||
-          afterIndex >= _destControllers.length) {
-        _destControllers.add(c);
-      } else {
-        _destControllers.insert(afterIndex + 1, c);
+  Future<void> _saveRecent(
+    String slot, {
+    required double lat,
+    required double lng,
+    required String label,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    final key = slot == 'pickup' ? _kRecentPickupKey : _kRecentDropKey;
+    final list = prefs.getStringList(key) ?? [];
+
+    // de-dup
+    list.removeWhere((s) {
+      final m = Map<String, dynamic>.from(jsonDecode(s));
+      final sameCoords = (m['lat'] == lat && m['lng'] == lng);
+      final sameLabel = (m['label'] == label);
+      return sameCoords || sameLabel;
+    });
+
+    list.insert(
+      0,
+      jsonEncode({
+        'lat': lat,
+        'lng': lng,
+        'label': label,
+        'savedAt': DateTime.now().toIso8601String(),
+      }),
+    );
+
+    // keep last 5
+    if (list.length > 5) list.removeRange(5, list.length);
+    await prefs.setStringList(key, list);
+  }
+
+  Future<Map<String, String>> _getSenderInfo() async {
+    String name = '';
+    String phone = '';
+
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user != null) {
+      // direct from auth
+      name = user.displayName?.trim() ?? '';
+      phone = user.phoneNumber?.trim() ?? '';
+
+      // try Firestore profile if any is missing
+      if (name.isEmpty || phone.isEmpty) {
+        try {
+          final doc = await FirebaseFirestore.instance
+              .collection(
+                  'users') // <-- change if your profile collection differs
+              .doc(user.uid)
+              .get();
+
+          if (doc.exists) {
+            final data = doc.data() ?? {};
+            if (name.isEmpty) {
+              name =
+                  (data['name'] ?? data['fullName'] ?? data['username'] ?? '')
+                      .toString()
+                      .trim();
+            }
+            if (phone.isEmpty) {
+              phone =
+                  (data['phone'] ?? data['mobile'] ?? data['phoneNumber'] ?? '')
+                      .toString()
+                      .trim();
+            }
+          }
+        } catch (_) {
+          // ignore and keep fallbacks
+        }
+      }
+
+      // last fallback for name: use email local part
+      if (name.isEmpty) {
+        final email = user.email ?? '';
+        if (email.contains('@')) {
+          name = email.split('@').first.trim();
+        }
+      }
+    }
+
+    return {
+      'name': name,
+      'phone': phone,
+    };
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // SHARE LINK SHEET (request location from other person)
+  // ─────────────────────────────────────────────────────────────────────────────
+  void openRequestLocationSheet(BuildContext context, String slot,
+      {int? viaIndex}) {
+    showCupertinoModalPopup(
+      context: context,
+      barrierColor: Colors.black.withOpacity(.35),
+      builder: (ctx) {
+        Future<Map<String, dynamic>>? linkFuture;
+
+        return StatefulBuilder(
+          builder: (ctx, setSheet) {
+            linkFuture ??= _sendLocationRequest(slot, viaIndex: viaIndex);
+            final size = MediaQuery.of(ctx).size;
+            final width = size.width;
+            final height = size.height;
+            return Material(
+              color: Colors.transparent,
+              child: SafeArea(
+                top: false,
+                child: Align(
+                  alignment: Alignment.bottomCenter,
+                  child: Container(
+                    width: width,
+                    height: height * .65,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.vertical(
+                        top: Radius.circular(width * .05),
+                      ),
+                    ),
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: width * .05,
+                        vertical: width * .04,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // drag handle
+                          Center(
+                            child: Container(
+                              width: width * .18,
+                              height: width * .013,
+                              decoration: BoxDecoration(
+                                color: Colors.black12,
+                                borderRadius:
+                                    BorderRadius.circular(width * .01),
+                              ),
+                            ),
+                          ),
+                          SizedBox(height: width * .035),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  "Request Location",
+                                  style: TextStyle(
+                                    fontSize: width * .05,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
+                              CupertinoButton(
+                                padding: EdgeInsets.zero,
+                                onPressed: () => Navigator.pop(ctx),
+                                child: Icon(
+                                  CupertinoIcons.xmark,
+                                  size: width * .06,
+                                ),
+                              )
+                            ],
+                          ),
+                          SizedBox(height: width * .01),
+                          Text(
+                            'Share the link below to get the ${slot.toUpperCase()} location.',
+                            style: TextStyle(
+                              fontSize: width * .0325,
+                              color: Colors.black54,
+                            ),
+                          ),
+                          SizedBox(height: width * .04),
+                          Expanded(
+                            child: FutureBuilder<Map<String, dynamic>>(
+                              future: linkFuture,
+                              builder: (ctx, snap) {
+                                if (snap.connectionState ==
+                                    ConnectionState.waiting) {
+                                  return Center(
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const CupertinoActivityIndicator(
+                                            radius: 14),
+                                        SizedBox(height: width * .03),
+                                        Text(
+                                          "Generating secure link…",
+                                          style: TextStyle(
+                                            fontSize: width * .034,
+                                            color: Colors.black54,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                }
+                                if (snap.hasError) {
+                                  return Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        CupertinoIcons.exclamationmark_triangle,
+                                        color: Colors.red,
+                                        size: width * .12,
+                                      ),
+                                      SizedBox(height: width * .02),
+                                      Text(
+                                        "Couldn't create link",
+                                        style: TextStyle(
+                                          fontSize: width * .042,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                      SizedBox(height: width * .02),
+                                      Text(
+                                        "${snap.error}",
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                          fontSize: width * .032,
+                                          color: Colors.black54,
+                                        ),
+                                      ),
+                                      SizedBox(height: width * .04),
+                                      CupertinoButton.filled(
+                                        onPressed: () => setSheet(
+                                          () => linkFuture =
+                                              _sendLocationRequest(slot,
+                                                  viaIndex: viaIndex),
+                                        ),
+                                        child: const Text("Try again"),
+                                      ),
+                                    ],
+                                  );
+                                }
+
+                                final data = snap.data!;
+                                final link = data['link'] as String;
+                                final expiresAt = data['expiresAt'] as String?;
+
+                                // Just show the link (no Firestore write here)
+                                return Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Container(
+                                      padding: EdgeInsets.all(width * .035),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFF5F7FA),
+                                        border: Border.all(
+                                            color: const Color(0xFFE5E9F0)),
+                                        borderRadius:
+                                            BorderRadius.circular(width * .03),
+                                      ),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            "Share this link",
+                                            style: TextStyle(
+                                              fontSize: width * .035,
+                                              color: Colors.black54,
+                                            ),
+                                          ),
+                                          SizedBox(height: width * .02),
+                                          SelectableText(
+                                            link,
+                                            style: TextStyle(
+                                              fontSize: width * .034,
+                                              fontFamily: 'monospace',
+                                            ),
+                                          ),
+                                          if (expiresAt != null) ...[
+                                            SizedBox(height: width * .02),
+                                            Text(
+                                              "Expires: $expiresAt",
+                                              style: TextStyle(
+                                                fontSize: width * .03,
+                                                color: Colors.black45,
+                                              ),
+                                            ),
+                                          ],
+                                          SizedBox(height: width * .02),
+                                          Row(
+                                            children: [
+                                              // Copy
+                                              Expanded(
+                                                child: CupertinoButton(
+                                                  color:
+                                                      const Color(0xFFE8F3FF),
+                                                  padding: EdgeInsets.symmetric(
+                                                    vertical: width * .028,
+                                                  ),
+                                                  onPressed: () async {
+                                                    await Clipboard.setData(
+                                                        ClipboardData(
+                                                            text: link));
+                                                    if (mounted) {
+                                                      ScaffoldMessenger.of(
+                                                              context)
+                                                          .showSnackBar(
+                                                        const SnackBar(
+                                                          content: Text(
+                                                              "Link copied"),
+                                                          behavior:
+                                                              SnackBarBehavior
+                                                                  .floating,
+                                                          duration: Duration(
+                                                              seconds: 1),
+                                                        ),
+                                                      );
+                                                    }
+                                                  },
+                                                  child: Row(
+                                                    mainAxisAlignment:
+                                                        MainAxisAlignment
+                                                            .center,
+                                                    children: [
+                                                      Icon(
+                                                        CupertinoIcons
+                                                            .doc_on_doc,
+                                                        size: width * .05,
+                                                        color: const Color(
+                                                            0xFF1976D2),
+                                                      ),
+                                                      SizedBox(
+                                                          width: width * .02),
+                                                      Text(
+                                                        "Copy link",
+                                                        style: TextStyle(
+                                                          fontSize:
+                                                              width * .035,
+                                                          fontWeight:
+                                                              FontWeight.w700,
+                                                          color: const Color(
+                                                              0xFF1976D2),
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ),
+                                              SizedBox(width: width * .03),
+                                              // Share
+                                              Expanded(
+                                                child: CupertinoButton.filled(
+                                                  padding: EdgeInsets.symmetric(
+                                                    vertical: width * .028,
+                                                  ),
+                                                  onPressed: () async {
+                                                    await Share.share(
+                                                      link,
+                                                      subject:
+                                                          "Share your ${slot.toUpperCase()} location",
+                                                    );
+                                                  },
+                                                  child: Row(
+                                                    mainAxisAlignment:
+                                                        MainAxisAlignment
+                                                            .center,
+                                                    children: [
+                                                      Icon(CupertinoIcons.share,
+                                                          size: width * .05),
+                                                      SizedBox(
+                                                          width: width * .02),
+                                                      Text(
+                                                        "Share",
+                                                        style: TextStyle(
+                                                          fontSize:
+                                                              width * .035,
+                                                          fontWeight:
+                                                              FontWeight.w700,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    SizedBox(height: width * .04),
+
+                                    // Recent Requests placeholder
+                                    Text(
+                                      "Recent Request",
+                                      style: TextStyle(
+                                        fontSize: width * .036,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                    SizedBox(height: width * .025),
+                                    Container(
+                                      height: width * .25,
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFF5F7FA),
+                                        border:
+                                            Border.all(color: Colors.black12),
+                                        borderRadius:
+                                            BorderRadius.circular(width * .03),
+                                      ),
+                                      child: Center(
+                                        child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            Icon(
+                                              CupertinoIcons.location_solid,
+                                              color: Colors.redAccent,
+                                              size: width * .06,
+                                            ),
+                                            SizedBox(width: width * .03),
+                                            Text(
+                                              "No recent Location",
+                                              style: TextStyle(
+                                                fontSize: width * .04,
+                                                color: Colors.black54,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                    SizedBox(height: width * .025),
+                                    SizedBox(
+                                      width: double.infinity,
+                                      child: CupertinoButton(
+                                        color: const Color(0xFF1E88E5),
+                                        onPressed: () => Navigator.pop(ctx),
+                                        child: Text(
+                                          "Done",
+                                          style: TextStyle(
+                                            fontSize: width * .04,
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  // Only generate and return a link. No Firestore writes beyond allowed fields.
+  Future<Map<String, dynamic>> _sendLocationRequest(String type,
+      {int? viaIndex}) async {
+    if (tripId == null) {
+      await _createTripDocument(); // ensure exists
+    }
+    final id = tripId!;
+    final shareId = const Uuid().v4(); // kept for URL/session purposes
+    final expiresAtDt = DateTime.now().add(const Duration(hours: 24));
+    final expiresAtIso = expiresAtDt.toIso8601String();
+
+    // deep link with optional vindex (lets your web know which stop)
+    final params = {
+      "id": id,
+      "type": type,
+      "sid": shareId,
+      if (viaIndex != null) "vindex": "$viaIndex",
+    };
+    final q = params.entries
+        .map((e) => "${e.key}=${Uri.encodeComponent(e.value)}")
+        .join("&");
+    final link = "https://drivex-2a34e.web.app/?$q";
+
+    return {"link": link, "expiresAt": expiresAtIso, "shareId": shareId};
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // FIRESTORE: create trip + listen to updates
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Future<void> _createTripDocument() async {
+  //   final docRef =
+  //       await FirebaseFirestore.instance.collection("D2D_Orders").add({
+  //     // Only the allowed fields:
+  //     "route": {
+  //       "pickup": {
+  //         "phone": pickupPhoneCtrl.text.trim(),
+  //         "name": pickupNameCtrl.text.trim(),
+  //         "note": pickupNoteCtrl.text.trim(),
+  //         "locationCoordinates": null,
+  //       },
+  //       "stops": [],
+  //       "dropoff": {
+  //         "phone": dropPhoneCtrl.text.trim(),
+  //         "name": dropNameCtrl.text.trim(),
+  //         "note": dropNoteCtrl.text.trim(),
+  //         "locationCoordinates": null,
+  //       },
+  //     },
+  //     "senderName": "",
+  //     "senderPhone": "",
+  //     "createdAt": FieldValue.serverTimestamp(),
+  //     "updatedAt": FieldValue.serverTimestamp(),
+  //     "status": "initiated",
+  //   });
+
+  //   tripId = docRef.id;
+  //   _listenToTripUpdates();
+  // }
+
+  ////////////////////////////////////////
+
+  // Future<void> _backfillSenderFieldsIfEmpty() async {
+  //   if (tripId == null) return;
+  //   final ref = FirebaseFirestore.instance.collection('D2D_Orders').doc(tripId);
+  //   final snap = await ref.get();
+  //   if (!snap.exists) return;
+  //   final data = snap.data() ?? {};
+  //   final needsName = (data['senderName'] ?? '').toString().trim().isEmpty;
+  //   final needsPhone = (data['senderPhone'] ?? '').toString().trim().isEmpty;
+  //   if (needsName || needsPhone) {
+  //     final s = await _getSenderInfo();
+  //     await ref.update({
+  //       if (needsName) "senderName": s['name'] ?? "",
+  //       if (needsPhone) "senderPhone": s['phone'] ?? "",
+  //       "updatedAt": FieldValue.serverTimestamp(),
+  //     });
+  //   }
+  // }
+
+  Future<void> _createTripDocument() async {
+    // get user info first
+    final sender = await _getSenderInfo();
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    final email = FirebaseAuth.instance.currentUser?.email;
+
+    final docRef =
+        await FirebaseFirestore.instance.collection("D2D_Orders").add({
+      "route": {
+        "pickup": {
+          "phone": pickupPhoneCtrl.text.trim(),
+          "name": pickupNameCtrl.text.trim(),
+          "note": pickupNoteCtrl.text.trim(),
+          "locationCoordinates": null,
+        },
+        "stops": [],
+        "dropoff": {
+          "phone": dropPhoneCtrl.text.trim(),
+          "name": dropNameCtrl.text.trim(),
+          "note": dropNoteCtrl.text.trim(),
+          "locationCoordinates": null,
+        },
+      },
+
+      // NEW: identify the customer creating the order
+      "senderName": sender['name'] ?? "",
+      "senderPhone": sender['phone'] ?? "",
+      "createdBy": uid,
+      "createdByEmail": email,
+
+      "createdAt": FieldValue.serverTimestamp(),
+      "updatedAt": FieldValue.serverTimestamp(),
+      "status": "initiated",
+    });
+
+    tripId = docRef.id;
+    _listenToTripUpdates();
+  }
+
+  void _listenToTripUpdates() {
+    tripSub?.cancel();
+    final id = tripId;
+    if (id == null) return;
+    tripSub = FirebaseFirestore.instance
+        .collection("D2D_Orders")
+        .doc(id)
+        .snapshots()
+        .listen((doc) {
+      if (!doc.exists) return;
+      final data = doc.data();
+      if (data == null) return;
+
+      // Only: route.* updates UI
+      final route = (data['route'] as Map<String, dynamic>?) ?? {};
+
+      // pickup
+      final pickup = route['pickup'] as Map<String, dynamic>?;
+      final pLoc = pickup?['locationCoordinates'] as Map<String, dynamic>?;
+      if (pLoc != null && pLoc['lat'] != null && pLoc['lng'] != null) {
+        final lat = (pLoc['lat'] as num).toDouble();
+        final lng = (pLoc['lng'] as num).toDouble();
+        setState(() {
+          pickupLatLng = LatLng(lat, lng);
+          fromController.text =
+              "${lat.toStringAsFixed(6)}, ${lng.toStringAsFixed(6)}";
+        });
+      }
+
+      // dropoff
+      final drop = route['dropoff'] as Map<String, dynamic>?;
+      final dLoc = drop?['locationCoordinates'] as Map<String, dynamic>?;
+      if (dLoc != null && dLoc['lat'] != null && dLoc['lng'] != null) {
+        final lat = (dLoc['lat'] as num).toDouble();
+        final lng = (dLoc['lng'] as num).toDouble();
+        setState(() {
+          dropLatLng = LatLng(lat, lng);
+          toController.text =
+              "${lat.toStringAsFixed(6)}, ${lng.toStringAsFixed(6)}";
+        });
+      }
+
+      // stops
+      final stops = (route['stops'] as List?)?.cast<dynamic>() ?? const [];
+      if (stops.isNotEmpty) {
+        setState(() {
+          // Ensure UI lists are long enough
+          while (_stops.length < stops.length) {
+            _stops.add(TextEditingController());
+            _stopTypes.add("pick");
+            _stopName.add(TextEditingController());
+            _stopPhone.add(TextEditingController());
+            _stopNote.add(TextEditingController());
+            _stopLatLng.add(null);
+          }
+          for (var i = 0; i < stops.length; i++) {
+            final s = (stops[i] as Map?)?.cast<String, dynamic>() ?? {};
+            final loc = (s['location'] as Map?)?.cast<String, dynamic>();
+            final type = (s['type'] as String?) ?? "pick";
+            _stopTypes[i] = type;
+            _stopName[i].text = (s['name'] as String?) ?? _stopName[i].text;
+            _stopPhone[i].text = (s['phone'] as String?) ?? _stopPhone[i].text;
+            _stopNote[i].text = (s['note'] as String?) ?? _stopNote[i].text;
+
+            if (loc != null && loc['lat'] != null && loc['lng'] != null) {
+              final lat = (loc['lat'] as num).toDouble();
+              final lng = (loc['lng'] as num).toDouble();
+              _stopLatLng[i] = LatLng(lat, lng);
+              _stops[i].text =
+                  "${lat.toStringAsFixed(6)}, ${lng.toStringAsFixed(6)}";
+            }
+          }
+        });
       }
     });
   }
 
-  // Optional: remove a destination
-  void _removeDestination(int index) {
-    if (_destControllers.length == 1) {
-      _showSnackBar(context, "At least one destination is required.");
-      return;
+  // ─────────────────────────────────────────────────────────────────────────────
+  // LOCATION (self) + utility
+  // ─────────────────────────────────────────────────────────────────────────────
+  String _generateMapLink(double lat, double lng) =>
+      "https://www.google.com/maps?q=$lat,$lng";
+
+  Future<void> requestLocation(TextEditingController controller) async {
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      throw Exception("Location services are disabled.");
     }
+
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        throw Exception("Location permission denied.");
+      }
+    }
+    if (permission == LocationPermission.deniedForever) {
+      throw Exception("Location permission permanently denied.");
+    }
+
+    final position = await Geolocator.getCurrentPosition(
+      desiredAccuracy: LocationAccuracy.high,
+    );
+    final link = _generateMapLink(position.latitude, position.longitude);
+    controller.text = link;
+    await Share.share("Here is my location: $link");
+  }
+
+  Future<void> getCurrentLocationAndSetField() async {
+    final position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high);
+    final latLng = LatLng(position.latitude, position.longitude);
+
+    // reverse geocode
+    final url =
+        "https://maps.googleapis.com/maps/api/geocode/json?latlng=${position.latitude},${position.longitude}&key=$googleApiKey";
+    final response = await http.get(Uri.parse(url));
+    String address = "Current location";
+    if (response.statusCode == 200) {
+      final body = jsonDecode(response.body);
+      if (body['status'] == 'OK') {
+        address = body['results'][0]['formatted_address'];
+      }
+    }
+
     setState(() {
-      _destControllers.removeAt(index).dispose();
+      if (activeField == "from") {
+        pickupLatLng = latLng;
+        fromController.text = address;
+        _mapController?.animateCamera(CameraUpdate.newLatLng(latLng));
+      } else if (activeField == "to") {
+        dropLatLng = latLng;
+        toController.text = address;
+        _mapController?.animateCamera(CameraUpdate.newLatLng(latLng));
+      }
+      isFieldActive = false;
+      suggestions.clear();
     });
   }
 
-  // Placeholder for your share-link sheet
-  void openRequestLocationSheet(BuildContext context, String slot) {
-    _showSnackBar(context, "Share link for $slot (stub).");
+  Future<String> getPlaceFromCoordinates(double lat, double lon) async {
+    try {
+      final placemarks = await placemarkFromCoordinates(lat, lon);
+      if (placemarks.isNotEmpty) {
+        final p = placemarks.first;
+        final parts = <String?>[
+          p.name,
+          p.street,
+          p.subLocality,
+          p.locality,
+          p.administrativeArea,
+          p.country,
+          p.postalCode
+        ].where((e) => e != null && e!.isNotEmpty).map((e) => e!).toList();
+        return parts.join(', ');
+      }
+      return "No place found for the given coordinates.";
+    } catch (e) {
+      return "Error getting place: $e";
+    }
   }
 
-  // Next page validation
-  void _nextPage() {
-    final pickup = fromController.text.trim();
-    final dests = _destControllers.map((c) => c.text.trim()).toList();
+  Future<LatLng?> _geocodeAddress(String address) async {
+    if (address.trim().isEmpty) return null;
+    final url =
+        "https://maps.googleapis.com/maps/api/geocode/json?address=${Uri.encodeComponent(address)}&key=$googleApiKey";
+    try {
+      final res = await http.get(Uri.parse(url));
+      if (res.statusCode == 200) {
+        final body = jsonDecode(res.body);
+        if (body['status'] == 'OK' && (body['results'] as List).isNotEmpty) {
+          final loc = body['results'][0]['geometry']['location'];
+          final lat = (loc['lat'] as num).toDouble();
+          final lng = (loc['lng'] as num).toDouble();
+          return LatLng(lat, lng);
+        }
+      }
+    } catch (_) {}
+    return null;
+  }
 
-    if (pickup.isEmpty) {
-      _showSnackBar(context, "Please enter Pick-Up location.");
+  Future<void> _ensureAllLocationsResolved() async {
+    // pickup
+    if (pickupLatLng == null && fromController.text.trim().isNotEmpty) {
+      pickupLatLng = await _geocodeAddress(fromController.text.trim());
+    }
+    // drop
+    if (dropLatLng == null && toController.text.trim().isNotEmpty) {
+      dropLatLng = await _geocodeAddress(toController.text.trim());
+    }
+    // stops
+    for (var i = 0; i < _stops.length; i++) {
+      if (_stopLatLng[i] == null && _stops[i].text.trim().isNotEmpty) {
+        _stopLatLng[i] = await _geocodeAddress(_stops[i].text.trim());
+      }
+    }
+  }
+
+  Map<String, dynamic> _buildRoutePayload() {
+    Map<String, double>? _coords(LatLng? ll) =>
+        (ll == null) ? null : {"lat": ll.latitude, "lng": ll.longitude};
+
+    final stops = <Map<String, dynamic>>[];
+    for (var i = 0; i < _stops.length; i++) {
+      final loc = _coords(_stopLatLng[i]);
+      if (loc != null) {
+        stops.add({
+          "type": _stopTypes[i], // "pick" | "drop"
+          "location": loc,
+          "phone": _stopPhone[i].text.trim(),
+          "name": _stopName[i].text.trim(),
+          "note": _stopNote[i].text.trim(),
+        });
+      }
+    }
+
+    return {
+      "route": {
+        "pickup": {
+          "phone": pickupPhoneCtrl.text.trim(),
+          "name": pickupNameCtrl.text.trim(),
+          "note": pickupNoteCtrl.text.trim(),
+          "locationCoordinates": _coords(pickupLatLng),
+        },
+        "stops": stops,
+        "dropoff": {
+          "phone": dropPhoneCtrl.text.trim(),
+          "name": dropNameCtrl.text.trim(),
+          "note": dropNoteCtrl.text.trim(),
+          "locationCoordinates": _coords(dropLatLng),
+        },
+      },
+      "updatedAt": FieldValue.serverTimestamp(),
+    };
+  }
+
+  Future<void> _saveRoute() async {
+    if (tripId == null) await _createTripDocument();
+    await _ensureAllLocationsResolved();
+    final id = tripId!;
+    final payload = _buildRoutePayload();
+    await FirebaseFirestore.instance
+        .collection("D2D_Orders")
+        .doc(id)
+        .set(payload, SetOptions(merge: true));
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // GOOGLE PLACES: Autocomplete & Details via REST (optional helpers)
+  // ─────────────────────────────────────────────────────────────────────────────
+  Future<void> getPlaceSuggestions(String input) async {
+    if (input.isEmpty) {
+      setState(() => suggestions = []);
       return;
     }
-    if (dests.any((d) => d.isEmpty)) {
-      _showSnackBar(context, "Please fill all Destination locations.");
-      return;
+    final sessionToken = const Uuid().v4();
+    final url =
+        "https://maps.googleapis.com/maps/api/place/autocomplete/json?input=$input&key=$googleApiKey&sessiontoken=$sessionToken&components=country:in";
+    final response = await http.get(Uri.parse(url));
+    if (response.statusCode == 200) {
+      final body = jsonDecode(response.body);
+      if (body['status'] == 'OK') {
+        setState(() => suggestions = body['predictions']);
+      } else {
+        setState(() => suggestions = []);
+      }
     }
+  }
 
-    _showSnackBar(context, "Proceeding with ${dests.length} destination(s).");
-    // TODO: Navigate with your data
+  Future<void> selectSuggestion(String placeId) async {
+    final url =
+        "https://maps.googleapis.com/maps/api/place/details/json?place_id=$placeId&key=$googleApiKey";
+    final response = await http.get(Uri.parse(url));
+    if (response.statusCode == 200) {
+      final result = jsonDecode(response.body)['result'];
+      final lat = (result['geometry']['location']['lat'] as num).toDouble();
+      final lng = (result['geometry']['location']['lng'] as num).toDouble();
+      final address = result['formatted_address'] as String? ?? "";
+      final ll = LatLng(lat, lng);
+
+      setState(() {
+        if (activeField == "from") {
+          pickupLatLng = ll;
+          fromController.text = address;
+          _mapController?.animateCamera(CameraUpdate.newLatLng(ll));
+        } else if (activeField == "to") {
+          dropLatLng = ll;
+          toController.text = address;
+          _mapController?.animateCamera(CameraUpdate.newLatLng(ll));
+        }
+        isFieldActive = false;
+        suggestions.clear();
+      });
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // BOTTOM SHEET: choose stop type (Pick / Drop)
+  // ─────────────────────────────────────────────────────────────────────────────
+  Future<String?> _askStopType(BuildContext context) async {
+    return showCupertinoModalPopup<String>(
+      context: context,
+      builder: (ctx) => CupertinoActionSheet(
+        title: const Text('Add Stop'),
+        message: const Text('Which type of point do you want to add here?'),
+        actions: [
+          CupertinoActionSheetAction(
+            onPressed: () => Navigator.pop(ctx, 'pick'),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: const [
+                Icon(CupertinoIcons.arrow_down_circle_fill,
+                    color: Colors.green),
+                SizedBox(width: 8),
+                Text('Pickup'),
+              ],
+            ),
+          ),
+          CupertinoActionSheetAction(
+            onPressed: () => Navigator.pop(ctx, 'drop'),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: const [
+                Icon(CupertinoIcons.arrow_up_circle_fill,
+                    color: Colors.redAccent),
+                SizedBox(width: 8),
+                Text('Drop'),
+              ],
+            ),
+          ),
+        ],
+        cancelButton: CupertinoActionSheetAction(
+          onPressed: () => Navigator.pop(ctx, null),
+          child: const Text('Cancel'),
+        ),
+      ),
+    );
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // LIFECYCLE
+  // ─────────────────────────────────────────────────────────────────────────────
+  @override
+  void initState() {
+    super.initState();
+    _createTripDocument();
+
+    fromFocus.addListener(() {
+      if (fromFocus.hasFocus) {
+        setState(() {
+          isFieldActive = true;
+          activeField = "from";
+        });
+      }
+    });
+    toFocus.addListener(() {
+      if (toFocus.hasFocus) {
+        setState(() {
+          isFieldActive = true;
+          activeField = "to";
+        });
+      }
+    });
+
+    // show/hide Drop dynamically + clear Drop when Pickup cleared
+    fromController.addListener(() {
+      final hasPickupLocal = fromController.text.trim().isNotEmpty;
+      if (!hasPickupLocal && toController.text.isNotEmpty) {
+        toController.clear(); // auto-clear drop when pickup removed
+        dropLatLng = null;
+      }
+      if (mounted) setState(() {}); // rebuild to update visibility
+    });
   }
 
   @override
   void dispose() {
     fromController.dispose();
-    for (final c in _destControllers) {
+    toController.dispose();
+    for (final c in _stops) {
       c.dispose();
     }
+    for (final c in _stopName) c.dispose();
+    for (final c in _stopPhone) c.dispose();
+    for (final c in _stopNote) c.dispose();
+
+    pickupNameCtrl.dispose();
+    pickupPhoneCtrl.dispose();
+    pickupNoteCtrl.dispose();
+    dropNameCtrl.dispose();
+    dropPhoneCtrl.dispose();
+    dropNoteCtrl.dispose();
+
+    fromFocus.dispose();
+    toFocus.dispose();
+    tripSub?.cancel();
     super.dispose();
   }
 
+  // ─────────────────────────────────────────────────────────────────────────────
+  // UI HELPERS
+  // ─────────────────────────────────────────────────────────────────────────────
+  Future<void> _onNext() async {
+    final pickupText = fromController.text.trim();
+    final dropText = toController.text.trim();
+    if (pickupText.isEmpty || dropText.isEmpty) {
+      _showSnackBar("Please fill both Pick-Up and Drop-Off Locations.");
+      return;
+    }
+    // ensure no empty stops
+    if (_stops.any((s) => s.text.trim().isEmpty)) {
+      _showSnackBar("Please fill all stops or remove empty ones.");
+      return;
+    }
+
+    await _saveRoute();
+
+    _showSnackBar("Driver requested successfully!");
+    if (!mounted) return;
+    Navigator.push(
+      context,
+      CupertinoPageRoute(
+        builder: (context) => D2Dpage02(
+          pickupLocation: pickupText,
+          dropLocation: dropText,
+        ),
+      ),
+    );
+  }
+
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // BUILD
+  // ─────────────────────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
@@ -3648,564 +7160,962 @@ class _D2DPage01State extends State<D2DPage01> {
       backgroundColor: Colors.white,
       body: Container(
         color: ColorConstant.color1.withOpacity(.15),
-        child: SizedBox(
-          height: height,
+        child: Center(
           child: SingleChildScrollView(
             child: SafeArea(
               child: Padding(
                 padding: EdgeInsets.symmetric(horizontal: width * .02),
                 child: Center(
                   child: Column(
+                    mainAxisSize: MainAxisSize.min,
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       SizedBox(height: width * .1),
-                      SizedBox(height: width * .3),
-                      SizedBox(
-                        width: width * .75,
-                        height: width * .5,
-                        child: Center(
-                          child: Stack(
-                            children: [
-                              Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  Center(
-                                    child: Container(
-                                      width: width * .5,
-                                      decoration: BoxDecoration(
-                                        color: Colors.white,
-                                        borderRadius:
-                                            BorderRadius.circular(width * .025),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: Colors.black12,
-                                            blurRadius: width * .02,
-                                            offset: Offset(
-                                                width * .01, width * .0125),
-                                          )
-                                        ],
-                                      ),
-                                      child: Padding(
-                                        padding: EdgeInsets.all(width * .01),
-                                        child: Text(
-                                          "Please use current location or Request location for accurate location",
-                                          style:
-                                              TextStyle(fontSize: width * .025),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  SizedBox(
-                                    height: height * .1,
-                                  ),
-                                  // How to use
-                                  Container(
-                                    width: width * .75,
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius:
-                                          BorderRadius.circular(width * .025),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.black12,
-                                          blurRadius: width * .02,
-                                          offset: Offset(
-                                              width * .01, width * .0125),
-                                        )
-                                      ],
-                                    ),
-                                    child: Padding(
-                                      padding: EdgeInsets.all(width * .02),
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            "How to use ?",
-                                            style: TextStyle(
-                                              fontSize: width * .03,
-                                              fontWeight: FontWeight.w500,
-                                            ),
-                                          ),
-                                          Text(
-                                            'Tap the field to search and select locations. Use "Add Destination" to insert more stops.',
-                                            style: TextStyle(
-                                              fontSize: width * .0275,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              Align(
-                                alignment: Alignment.topRight,
-                                child: Padding(
-                                  padding: EdgeInsets.only(
-                                    top: height * .05,
-                                    right: width * .025,
-                                  ),
-                                  child: Image.asset(
-                                    ImageConstant.deliveryman2,
-                                    height: width * .25,
-                                  ),
-                                ),
-                              )
-                            ],
-                          ),
-                        ),
-                      ),
 
-                      // ───────── PICKUP ─────────
-                      SizedBox(height: width * .1),
-                      Row(
+                      // How to use
+                      Stack(
                         children: [
-                          Text(
-                            "Enter PickUp Details",
-                            style: TextStyle(
-                              fontWeight: FontWeight.w500,
-                              fontSize: width * .035,
-                            ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: width * .02),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          // dot
-                          Padding(
-                            padding: EdgeInsets.only(right: width * .025),
-                            child: Container(
-                              width: width * 0.04,
-                              height: width * 0.04,
-                              decoration: BoxDecoration(
-                                border: Border.all(
-                                  width: width * .005,
-                                  color: Colors.black.withOpacity(.25),
-                                ),
-                                color: Colors.green,
-                                shape: BoxShape.circle,
-                              ),
-                              child: Center(
-                                child: Container(
-                                  width: width * 0.02,
-                                  height: width * 0.02,
+                          SizedBox(
+                            // decoration:
+                            //     BoxDecoration(border: Border.all()),
+                            width: width * 1,
+                            // height: height * .35,
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.start,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Container(
+                                  width: width * .5,
                                   decoration: BoxDecoration(
-                                    color: Colors.black.withOpacity(0.5),
-                                    shape: BoxShape.circle,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                          // SizedBox(width: ,),
-
-                          // field (navigate to place search page)
-                          GestureDetector(
-                            onTap: () async {
-                              await Navigator.push(
-                                context,
-                                CupertinoPageRoute(
-                                  builder: (_) => D2dPlaceSearchPage(
-                                    controller: fromController,
-                                    accentColor: Colors.green,
-                                    label: "Pickup",
-                                  ),
-                                ),
-                              );
-                              setState(() {});
-                            },
-                            child: Container(
-                              height: width * .125,
-                              width: width * .75,
-                              padding: EdgeInsets.only(left: width * 0.03),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius:
-                                    BorderRadius.circular(width * 0.03),
-                              ),
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      fromController.text.isEmpty
-                                          ? "Enter PickUp location"
-                                          : fromController.text,
-                                      style: TextStyle(
-                                        color: fromController.text.isEmpty
-                                            ? Colors.black.withOpacity(.5)
-                                            : Colors.black,
-                                        fontSize: width * 0.035,
-                                      ),
-                                    ),
-                                  ),
-                                  Padding(
-                                    padding: EdgeInsets.all(width * .01),
-                                    child: GestureDetector(
-                                      onTap: () {
-                                        openRequestLocationSheet(
-                                          context,
-                                          "pickup",
-                                        );
-                                      },
-                                      child: Container(
-                                        height: double.infinity,
-                                        width: width * .225,
-                                        decoration: BoxDecoration(
-                                          color: ColorConstant.greenColor
-                                              .withOpacity(.9),
-                                          borderRadius: BorderRadius.circular(
-                                            width * 0.02,
-                                          ),
-                                        ),
-                                        child: Center(
-                                          child: Text(
-                                            "Request\nLocation",
-                                            textAlign: TextAlign.center,
-                                            style: TextStyle(
-                                              fontSize: width * .03,
-                                              fontWeight: FontWeight.w500,
-                                              color: Colors.white,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      // ───────── DESTINATIONS (ListView.builder) ─────────
-                      if (fromController.text.trim().isNotEmpty) ...[
-                        SizedBox(height: width * .05),
-                        Row(
-                          children: [
-                            Text(
-                              "Enter Destination Details",
-                              style: TextStyle(
-                                fontWeight: FontWeight.w500,
-                                fontSize: width * .035,
-                              ),
-                            ),
-                          ],
-                        ),
-                        SizedBox(height: width * .02),
-
-                        // Builder with shrinkWrap
-                        ListView.builder(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: _destControllers.length,
-                          itemBuilder: (context, index) {
-                            final toController = _destControllers[index];
-
-                            return Padding(
-                              padding: EdgeInsets.only(),
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  // Left dots + dotted "L"
-                                  Column(
-                                    mainAxisAlignment: MainAxisAlignment.start,
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      // SizedBox(height: height * .02),
-                                      Padding(
-                                        padding: EdgeInsets.only(
-                                            left: width * 0.025),
-                                        child: DottedBorder(
-                                          color: Colors.black54,
-                                          strokeWidth: width * .0025,
-                                          dashPattern: const [4, 4],
-                                          strokeCap: StrokeCap.round,
-                                          padding: EdgeInsets.zero,
-                                          customPath: (size) {
-                                            // LEFT edge only
-                                            final p = Path()
-                                              ..moveTo(0, 0)
-                                              ..lineTo(0, size.height);
-                                            return p;
-                                          },
-                                          child: SizedBox(
-                                            width: width * .05,
-                                            height: height * .02,
-                                          ),
-                                        ),
-                                      ),
-                                      Padding(
-                                        padding: EdgeInsets.only(
-                                            left: width * 0.005),
-                                        child: Container(
-                                          width: width * 0.04,
-                                          height: width * 0.04,
-                                          decoration: BoxDecoration(
-                                            border: Border.all(
-                                              width: width * .005,
-                                              color:
-                                                  Colors.black.withOpacity(.25),
-                                            ),
-                                            color: Colors.redAccent[200],
-                                            shape: BoxShape.circle,
-                                          ),
-                                          child: Center(
-                                            child: Container(
-                                              width: width * 0.02,
-                                              height: width * 0.02,
-                                              decoration: BoxDecoration(
-                                                color: Colors.black
-                                                    .withOpacity(0.5),
-                                                shape: BoxShape.circle,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                      if (index ==
-                                          _destControllers.length - 1) ...[
-                                        Padding(
-                                          padding: EdgeInsets.only(
-                                              left: width * 0.025),
-                                          child: DottedBorder(
-                                            color: Colors.black54,
-                                            strokeWidth: width * .0025,
-                                            dashPattern: const [4, 3],
-                                            strokeCap: StrokeCap.round,
-                                            padding: EdgeInsets.zero,
-                                            customPath: (size) {
-                                              final p = Path()
-                                                ..moveTo(0, 0) // left
-                                                ..lineTo(0, size.height)
-                                                ..moveTo(
-                                                    0, size.height) // bottom
-                                                ..lineTo(
-                                                    size.width, size.height);
-                                              return p;
-                                            },
-                                            child: SizedBox(
-                                              width: width * .05,
-                                              height: height * .0525,
-                                              // height: height * .025,
-                                            ),
-                                          ),
-                                        )
-                                      ] else
-                                        Padding(
-                                          padding: EdgeInsets.only(
-                                              left: width * 0.025),
-                                          child: DottedBorder(
-                                            color: Colors.black54,
-                                            strokeWidth: width * .0025,
-                                            dashPattern: const [4, 3],
-                                            strokeCap: StrokeCap.round,
-                                            padding: EdgeInsets.zero,
-                                            customPath: (size) {
-                                              // LEFT edge only — no bottom
-                                              return Path()
-                                                ..moveTo(0, 0)
-                                                ..lineTo(0, size.height);
-                                            },
-                                            child: SizedBox(
-                                              width: width * .05,
-                                              height: height *
-                                                  .04, // or height * .025 if you prefer
-                                            ),
-                                          ),
-                                        )
+                                    color: Colors.white,
+                                    borderRadius:
+                                        BorderRadius.circular(width * .025),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black12,
+                                        blurRadius: width * .02,
+                                        offset:
+                                            Offset(width * .01, width * .0125),
+                                      )
                                     ],
                                   ),
+                                  child: Padding(
+                                    padding: EdgeInsets.all(width * .01),
+                                    child: Text(
+                                      "Please use current location or Request location for accurate location",
+                                      style: TextStyle(fontSize: width * .025),
+                                    ),
+                                  ),
+                                ),
+                                SizedBox(height: width * .2),
+                                Container(
+                                  width: width * .75,
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius:
+                                        BorderRadius.circular(width * .025),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black12,
+                                        blurRadius: width * .02,
+                                        offset:
+                                            Offset(width * .01, width * .0125),
+                                      )
+                                    ],
+                                  ),
+                                  child: Padding(
+                                    padding: EdgeInsets.all(width * .02),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          "How to use ?",
+                                          style: TextStyle(
+                                            fontSize: width * .03,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                        Text(
+                                          "Tap the "
+                                          '"Request Location"'
+                                          " button and you will get a link\n"
+                                          "Share the link and Ask the other person to get in the link and Tap "
+                                          '"Share Location"',
+                                          style: TextStyle(
+                                            fontSize: width * .0275,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Align(
+                            alignment: Alignment.topRight,
+                            child: Padding(
+                              padding: EdgeInsets.only(
+                                top: height * .04,
+                                right: width * .1,
+                              ),
+                              child: Image.asset(
+                                ImageConstant.deliveryman2,
+                                height: width * .25,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: width * .1),
 
-                                  // Field + Add button
-                                  Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      // Destination field
-                                      GestureDetector(
-                                        onTap: () async {
-                                          await Navigator.push(
-                                            context,
-                                            CupertinoPageRoute(
-                                              builder: (_) =>
-                                                  D2dPlaceSearchPage(
-                                                controller: toController,
-                                                accentColor: Colors.redAccent,
-                                                label:
-                                                    "Destination ${index + 1}",
-                                              ),
+                      // Live Firestore -> updates input fields (pickup/drop)
+                      StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+                        stream: (tripId == null)
+                            ? const Stream.empty()
+                            : FirebaseFirestore.instance
+                                .collection("D2D_Orders")
+                                .doc(tripId)
+                                .snapshots(),
+                        builder: (context, snap) {
+                          if (snap.connectionState == ConnectionState.waiting) {
+                            return Padding(
+                              padding: EdgeInsets.only(top: width * .06),
+                              child: const CircularProgressIndicator(),
+                            );
+                          }
+
+                          // No legacy reads here
+
+                          return SizedBox(
+                            width: width * 1,
+                            child: ListView.separated(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: totalTiles,
+                              // separator index k is the gap *between* item k and k+1
+                              separatorBuilder: (context, sepIndex) {
+                                if (!hasPickup) return const SizedBox.shrink();
+
+                                final insertStopAt =
+                                    sepIndex; // add stop right after item sepIndex
+                                return Row(
+                                  children: [
+                                    // Left rail stub
+                                    Padding(
+                                      padding:
+                                          EdgeInsets.only(left: width * 0.02),
+                                      child: DottedBorder(
+                                        color: Colors.black54,
+                                        strokeWidth: width * .0025,
+                                        dashPattern: const [4, 3],
+                                        strokeCap: StrokeCap.round,
+                                        padding: EdgeInsets.zero,
+                                        customPath: (size) => Path()
+                                          ..moveTo(0, 0)
+                                          ..lineTo(0, size.height),
+                                        child: SizedBox(height: height * .0375),
+                                      ),
+                                    ),
+                                    SizedBox(width: width * .1),
+
+                                    // Add Stop button
+                                    GestureDetector(
+                                      onTap: () async {
+                                        final pickupFilled = fromController.text
+                                            .trim()
+                                            .isNotEmpty;
+                                        final stopsFilled = _stops.every(
+                                            (c) => c.text.trim().isNotEmpty);
+
+                                        if (!(pickupFilled && stopsFilled)) {
+                                          ScaffoldMessenger.of(context)
+                                              .showSnackBar(
+                                            const SnackBar(
+                                              content: Text(
+                                                  "Please fill existing locations first."),
                                             ),
                                           );
-                                          setState(() {});
-                                        },
-                                        child: Container(
-                                          width: width * .75,
-                                          height: width * .125,
-                                          padding: EdgeInsets.only(
-                                              left: width * 0.03),
-                                          decoration: BoxDecoration(
-                                            color: Colors.white,
-                                            borderRadius: BorderRadius.circular(
-                                                width * 0.03),
-                                          ),
-                                          child: Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.spaceBetween,
-                                            children: [
-                                              Expanded(
-                                                child: Text(
-                                                  toController.text.isEmpty
-                                                      ? "Enter Destination location"
-                                                      : toController.text,
-                                                  style: TextStyle(
-                                                    color: toController
-                                                            .text.isEmpty
-                                                        ? Colors.black
-                                                            .withOpacity(.5)
-                                                        : Colors.black,
-                                                    fontSize: width * 0.035,
+                                          return;
+                                        }
+
+                                        // ask for type
+                                        final type =
+                                            await _askStopType(context);
+                                        if (type == null) return;
+
+                                        setState(() {
+                                          _stops.insert(insertStopAt,
+                                              TextEditingController());
+                                          _stopTypes.insert(insertStopAt, type);
+                                          _stopName.insert(insertStopAt,
+                                              TextEditingController());
+                                          _stopPhone.insert(insertStopAt,
+                                              TextEditingController());
+                                          _stopNote.insert(insertStopAt,
+                                              TextEditingController());
+                                          _stopLatLng.insert(
+                                              insertStopAt, null);
+                                        });
+                                      },
+                                      child: Container(
+                                        height: height * .03,
+                                        padding: EdgeInsets.symmetric(
+                                            horizontal: width * .02),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white,
+                                          borderRadius: BorderRadius.circular(
+                                              width * .0125),
+                                          border:
+                                              Border.all(color: Colors.black45),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(Icons.add,
+                                                size: width * .05,
+                                                color: Colors.black38),
+                                            Text(
+                                              "Add Stop",
+                                              style: TextStyle(
+                                                color: Colors.black38,
+                                                fontSize: width * .035,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              },
+                              itemBuilder: (context, index) {
+                                // 0 -> Pickup
+                                // 1.._stops.length -> via stops
+                                // last -> Destination (only when hasPickup)
+
+                                // ───────── PICKUP ─────────
+                                if (index == 0) {
+                                  return Container(
+                                    // decoration: BoxDecoration(
+                                    //     border: Border.all()),
+                                    child: Row(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        // left rail + green dot
+                                        Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Padding(
+                                              padding: EdgeInsets.only(
+                                                  left: width * 0.02),
+                                              // child: DottedBorder(
+                                              //   color: Colors.black54,
+                                              //   strokeWidth:
+                                              //       width * .0025,
+                                              //   dashPattern: const [
+                                              //     4,
+                                              //     3
+                                              //   ],
+                                              //   strokeCap:
+                                              //       StrokeCap.round,
+                                              //   padding:
+                                              //       EdgeInsets.zero,
+                                              //   customPath: (size) =>
+                                              //       Path()
+                                              //         ..moveTo(0, 0)
+                                              //         ..lineTo(0,
+                                              //             size.height),
+                                              //   child: SizedBox(
+                                              //       height:
+                                              //           height * .04),
+                                              // ),
+                                              child: SizedBox(
+                                                  height: height * .04),
+                                            ),
+                                            Container(
+                                              width: width * 0.04,
+                                              height: width * 0.04,
+                                              decoration: BoxDecoration(
+                                                border: Border.all(
+                                                  width: width * .005,
+                                                  color: Colors.black
+                                                      .withOpacity(.25),
+                                                ),
+                                                color: Colors.green,
+                                                shape: BoxShape.circle,
+                                              ),
+                                              child: Center(
+                                                child: Container(
+                                                  width: width * 0.02,
+                                                  height: width * 0.02,
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.black
+                                                        .withOpacity(0.5),
+                                                    shape: BoxShape.circle,
                                                   ),
                                                 ),
                                               ),
-                                              Padding(
-                                                padding:
-                                                    EdgeInsets.all(width * .01),
-                                                child: GestureDetector(
-                                                  onTap: () {
-                                                    openRequestLocationSheet(
-                                                      context,
-                                                      "drop",
-                                                    );
-                                                  },
-                                                  child: Container(
-                                                    height: double.infinity,
-                                                    width: width * .225,
-                                                    decoration: BoxDecoration(
-                                                      color: ColorConstant
-                                                          .greenColor
-                                                          .withOpacity(.9),
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                        width * 0.02,
+                                            ),
+                                            Padding(
+                                              padding: EdgeInsets.only(
+                                                  left: width * 0.02),
+                                              child: DottedBorder(
+                                                color: Colors.black54,
+                                                strokeWidth: width * .0025,
+                                                dashPattern: const [4, 3],
+                                                strokeCap: StrokeCap.round,
+                                                padding: EdgeInsets.zero,
+                                                customPath: (size) => Path()
+                                                  ..moveTo(0, 0)
+                                                  ..lineTo(0, size.height),
+                                                child: SizedBox(
+                                                    height: height * .0375),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        SizedBox(width: width * .02),
+
+                                        // right: label + field
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                "Enter PickUp Details",
+                                                style: TextStyle(
+                                                  fontWeight: FontWeight.w500,
+                                                  fontSize: width * .035,
+                                                ),
+                                              ),
+                                              GestureDetector(
+                                                onTap: () async {
+                                                  await Navigator.push(
+                                                    context,
+                                                    CupertinoPageRoute(
+                                                      builder: (_) =>
+                                                          D2dPlaceSearchPage(
+                                                        controller:
+                                                            fromController,
+                                                        accentColor:
+                                                            Colors.green,
+                                                        label: "Pickup",
                                                       ),
                                                     ),
-                                                    child: Center(
-                                                      child: Text(
-                                                        "Request\nLocation",
-                                                        textAlign:
-                                                            TextAlign.center,
-                                                        style: TextStyle(
-                                                          fontSize: width * .03,
-                                                          fontWeight:
-                                                              FontWeight.w500,
-                                                          color: Colors.white,
+                                                  );
+                                                  setState(
+                                                      () {}); // reveals separator + destination
+                                                },
+                                                child: Container(
+                                                  height: width * .125,
+                                                  padding: EdgeInsets.only(
+                                                      left: width * 0.03),
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.white,
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            width * 0.03),
+                                                  ),
+                                                  child: Row(
+                                                    children: [
+                                                      Expanded(
+                                                        child: Text(
+                                                          fromController
+                                                                  .text.isEmpty
+                                                              ? "Enter PickUp location"
+                                                              : fromController
+                                                                  .text,
+                                                          style: TextStyle(
+                                                            color: fromController
+                                                                    .text
+                                                                    .isEmpty
+                                                                ? Colors.black
+                                                                    .withOpacity(
+                                                                        .5)
+                                                                : Colors.black,
+                                                            fontSize:
+                                                                width * 0.035,
+                                                          ),
                                                         ),
                                                       ),
-                                                    ),
+                                                      Padding(
+                                                        padding: EdgeInsets.all(
+                                                            width * .01),
+                                                        child: GestureDetector(
+                                                          onTap: () =>
+                                                              openRequestLocationSheet(
+                                                            context,
+                                                            "pickup",
+                                                          ),
+                                                          child: Container(
+                                                            height:
+                                                                double.infinity,
+                                                            width: width * .225,
+                                                            decoration:
+                                                                BoxDecoration(
+                                                              color: ColorConstant
+                                                                  .greenColor
+                                                                  .withOpacity(
+                                                                      .9),
+                                                              borderRadius:
+                                                                  BorderRadius
+                                                                      .circular(
+                                                                          width *
+                                                                              0.02),
+                                                            ),
+                                                            child: Center(
+                                                              child: Text(
+                                                                "Request\nLocation",
+                                                                textAlign:
+                                                                    TextAlign
+                                                                        .center,
+                                                                style:
+                                                                    TextStyle(
+                                                                  fontSize:
+                                                                      width *
+                                                                          .03,
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .w500,
+                                                                  color: Colors
+                                                                      .white,
+                                                                ),
+                                                              ),
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ],
                                                   ),
+                                                ),
+                                              ),
+                                              Text(
+                                                fromController.text,
+                                                style: TextStyle(
+                                                  fontSize: width * .025,
+                                                  color: Colors.black
+                                                      .withOpacity(.5),
                                                 ),
                                               ),
                                             ],
                                           ),
                                         ),
-                                      ),
+                                      ],
+                                    ),
+                                  );
+                                }
 
-                                      SizedBox(height: width * .025),
+                                // If we're here and there is no pickup, nothing else to render.
+                                if (!hasPickup) return const SizedBox.shrink();
 
-                                      // Row of actions: Add after this / Remove (optional)
-                                      if (index ==
-                                          _destControllers.length - 1) ...[
+                                // ───────── VIA STOP(S) ─────────
+                                final bool isStopTile = index <= _stops.length;
+                                if (isStopTile) {
+                                  final stopIdx =
+                                      index - 1; // 0-based in _stops
+                                  final TextEditingController stopCtrl =
+                                      _stops[stopIdx];
+
+                                  // color based on type chosen at creation
+                                  final bool isPick =
+                                      _stopTypes[stopIdx] == "pick";
+                                  final Color dotColor = isPick
+                                      ? Colors.green
+                                      : (Colors.redAccent[200] ??
+                                          Colors.redAccent);
+
+                                  return Container(
+                                    decoration: const BoxDecoration(),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
                                         Row(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.center,
                                           children: [
-                                            // Add Destination (only on last)
-                                            GestureDetector(
-                                              onTap: () => _addDestination(
-                                                  afterIndex: index),
-                                              child: Container(
-                                                padding: EdgeInsets.symmetric(
-                                                  vertical: width * .025,
-                                                  horizontal: width * .04,
+                                            // left rail + type-colored dot
+                                            Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Padding(
+                                                  padding: EdgeInsets.only(
+                                                      left: width * 0.02),
+                                                  child: DottedBorder(
+                                                    color: Colors.black54,
+                                                    strokeWidth: width * .0025,
+                                                    dashPattern: const [4, 3],
+                                                    strokeCap: StrokeCap.round,
+                                                    padding: EdgeInsets.zero,
+                                                    customPath: (size) => Path()
+                                                      ..moveTo(0, 0)
+                                                      ..lineTo(0, size.height),
+                                                    child: SizedBox(
+                                                        height: height * .02),
+                                                  ),
                                                 ),
-                                                decoration: BoxDecoration(
-                                                  color: Colors.blue,
-                                                  borderRadius:
-                                                      BorderRadius.circular(
-                                                          width * .025),
-                                                  boxShadow: [
-                                                    BoxShadow(
-                                                      color: Colors.black26,
-                                                      blurRadius: width * .02,
-                                                      offset: Offset(
-                                                          width * .01,
-                                                          width * .0125),
+                                                Container(
+                                                  width: width * 0.04,
+                                                  height: width * 0.04,
+                                                  decoration: BoxDecoration(
+                                                    border: Border.all(
+                                                      width: width * .005,
+                                                      color: Colors.black
+                                                          .withOpacity(.25),
                                                     ),
-                                                  ],
+                                                    color: dotColor,
+                                                    shape: BoxShape.circle,
+                                                  ),
+                                                  child: Center(
+                                                    child: Container(
+                                                      width: width * 0.02,
+                                                      height: width * 0.02,
+                                                      decoration: BoxDecoration(
+                                                        color: Colors.black
+                                                            .withOpacity(0.5),
+                                                        shape: BoxShape.circle,
+                                                      ),
+                                                    ),
+                                                  ),
                                                 ),
-                                                child: Text(
-                                                  "Add Destination",
-                                                  style: TextStyle(
+                                                Padding(
+                                                  padding: EdgeInsets.only(
+                                                      left: width * 0.02),
+                                                  child: DottedBorder(
+                                                    color: Colors.black54,
+                                                    strokeWidth: width * .0025,
+                                                    dashPattern: const [4, 3],
+                                                    strokeCap: StrokeCap.round,
+                                                    padding: EdgeInsets.zero,
+                                                    customPath: (size) => Path()
+                                                      ..moveTo(0, 0)
+                                                      ..lineTo(0, size.height),
+                                                    child: SizedBox(
+                                                        height: height * .02),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            SizedBox(width: width * .02),
+
+                                            // stop field (white container)
+                                            Expanded(
+                                              child: GestureDetector(
+                                                onTap: () async {
+                                                  await Navigator.push(
+                                                    context,
+                                                    CupertinoPageRoute(
+                                                      builder: (_) =>
+                                                          D2dPlaceSearchPage(
+                                                        controller: stopCtrl,
+                                                        accentColor: isPick
+                                                            ? Colors.green
+                                                            : Colors.redAccent,
+                                                        label: isPick
+                                                            ? "Stop (Pickup)"
+                                                            : "Stop (Drop)",
+                                                      ),
+                                                    ),
+                                                  );
+                                                  setState(() {});
+                                                },
+                                                child: Container(
+                                                  height: width * .125,
+                                                  padding: EdgeInsets.only(
+                                                      left: width * 0.03,
+                                                      right: width * .01),
+                                                  decoration: BoxDecoration(
                                                     color: Colors.white,
-                                                    fontSize: width * .035,
-                                                    fontWeight: FontWeight.bold,
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            width * 0.03),
+                                                  ),
+                                                  child: Row(
+                                                    children: [
+                                                      Expanded(
+                                                        child: Text(
+                                                          stopCtrl.text.isEmpty
+                                                              ? (isPick
+                                                                  ? "Enter Pickup Stop ${stopIdx + 1}"
+                                                                  : "Enter Drop Stop ${stopIdx + 1}")
+                                                              : stopCtrl.text,
+                                                          maxLines: 2,
+                                                          overflow: TextOverflow
+                                                              .ellipsis,
+                                                          style: TextStyle(
+                                                            color: stopCtrl.text
+                                                                    .isEmpty
+                                                                ? Colors.black
+                                                                    .withOpacity(
+                                                                        .5)
+                                                                : Colors.black,
+                                                            fontSize:
+                                                                width * 0.035,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                      GestureDetector(
+                                                        onTap: () =>
+                                                            openRequestLocationSheet(
+                                                          context,
+                                                          "via",
+                                                          viaIndex: stopIdx,
+                                                        ),
+                                                        child: Padding(
+                                                          padding:
+                                                              EdgeInsets.all(
+                                                                  width * .01),
+                                                          child: Container(
+                                                            height:
+                                                                double.infinity,
+                                                            width: width * .2,
+                                                            decoration:
+                                                                BoxDecoration(
+                                                              color: ColorConstant
+                                                                  .greenColor
+                                                                  .withOpacity(
+                                                                      .9),
+                                                              borderRadius:
+                                                                  BorderRadius
+                                                                      .circular(
+                                                                          width *
+                                                                              0.02),
+                                                            ),
+                                                            child: Center(
+                                                              child: Text(
+                                                                "Request\nLocation",
+                                                                textAlign:
+                                                                    TextAlign
+                                                                        .center,
+                                                                style:
+                                                                    TextStyle(
+                                                                  fontSize:
+                                                                      width *
+                                                                          .03,
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .w600,
+                                                                  color: Colors
+                                                                      .white,
+                                                                ),
+                                                              ),
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ],
                                                   ),
                                                 ),
                                               ),
                                             ),
 
-                                            SizedBox(width: width * .03),
-
-                                            // Remove (only on last, and only if more than 1)
-                                            if (_destControllers.length > 1)
-                                              GestureDetector(
-                                                onTap: () =>
-                                                    _removeDestination(index),
-                                                child: Container(
-                                                  padding: EdgeInsets.symmetric(
-                                                    vertical: width * .025,
-                                                    horizontal: width * .04,
-                                                  ),
-                                                  decoration: BoxDecoration(
-                                                    color: Colors.redAccent,
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            width * .025),
-                                                  ),
-                                                  child: Text(
-                                                    "Remove",
-                                                    style: TextStyle(
-                                                      color: Colors.white,
-                                                      fontSize: width * .035,
-                                                      fontWeight:
-                                                          FontWeight.w600,
+                                            // delete button
+                                            if (_stops.isNotEmpty)
+                                              Padding(
+                                                padding: EdgeInsets.only(
+                                                    left: width * .02),
+                                                child: GestureDetector(
+                                                  onTap: () {
+                                                    setState(() {
+                                                      _stops
+                                                          .removeAt(stopIdx)
+                                                          .dispose();
+                                                      _stopTypes
+                                                          .removeAt(stopIdx);
+                                                      _stopName
+                                                          .removeAt(stopIdx)
+                                                          .dispose();
+                                                      _stopPhone
+                                                          .removeAt(stopIdx)
+                                                          .dispose();
+                                                      _stopNote
+                                                          .removeAt(stopIdx)
+                                                          .dispose();
+                                                      _stopLatLng
+                                                          .removeAt(stopIdx);
+                                                    });
+                                                  },
+                                                  child: Container(
+                                                    height: width * .125,
+                                                    width: width * .1125,
+                                                    decoration: BoxDecoration(
+                                                      color: Colors.redAccent
+                                                          .withOpacity(.12),
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              width * .02),
+                                                      border: Border.all(
+                                                        color: Colors.redAccent
+                                                            .withOpacity(.4),
+                                                        width: width * .002,
+                                                      ),
+                                                    ),
+                                                    child: Icon(
+                                                      Icons.delete_outline,
+                                                      size: width * .06,
+                                                      color: Colors.redAccent,
                                                     ),
                                                   ),
                                                 ),
                                               ),
                                           ],
                                         ),
-                                      ] else
-                                        SizedBox(height: width * .025),
+                                        // SizedBox(height: width * .02),
+                                        // (Removed the Pick/Drop ChoiceChips per your request)
+                                      ],
+                                    ),
+                                  );
+                                }
+
+                                // ───────── DESTINATION ─────────
+                                return Container(
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      // left rail + red dot
+                                      Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.start,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Padding(
+                                            padding: EdgeInsets.only(
+                                                left: width * 0.02),
+                                            child: DottedBorder(
+                                              color: Colors.black54,
+                                              strokeWidth: width * .0025,
+                                              dashPattern: const [4, 3],
+                                              strokeCap: StrokeCap.round,
+                                              padding: EdgeInsets.zero,
+                                              customPath: (size) => Path()
+                                                ..moveTo(0, 0)
+                                                ..lineTo(0, size.height),
+                                              child: SizedBox(
+                                                  height: height * .04),
+                                            ),
+                                          ),
+                                          Container(
+                                            width: width * 0.04,
+                                            height: width * 0.04,
+                                            decoration: BoxDecoration(
+                                              border: Border.all(
+                                                width: width * .005,
+                                                color: Colors.black
+                                                    .withOpacity(.25),
+                                              ),
+                                              color: Colors.redAccent[200],
+                                              shape: BoxShape.circle,
+                                            ),
+                                            child: Center(
+                                              child: Container(
+                                                width: width * 0.02,
+                                                height: width * 0.02,
+                                                decoration: BoxDecoration(
+                                                  color: Colors.black
+                                                      .withOpacity(0.5),
+                                                  shape: BoxShape.circle,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                          Padding(
+                                            padding: EdgeInsets.only(
+                                                left: width * 0.02),
+                                            // child: DottedBorder(
+                                            //   color: Colors.black54,
+                                            //   strokeWidth:
+                                            //       width * .0025,
+                                            //   dashPattern: const [4, 3],
+                                            //   strokeCap:
+                                            //       StrokeCap.round,
+                                            //   padding: EdgeInsets.zero,
+                                            //   customPath: (size) =>
+                                            //       Path()
+                                            //         ..moveTo(0, 0)
+                                            //         ..lineTo(
+                                            //             0, size.height),
+                                            //   child: SizedBox(
+                                            //       height:
+                                            //           height * .0375),
+                                            // ),
+                                            child: SizedBox(
+                                                height: height * .0375),
+                                          ),
+                                        ],
+                                      ),
+                                      SizedBox(width: width * .02),
+
+                                      // right: header + field
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Row(children: [
+                                              Text(
+                                                "Enter Destination Details",
+                                                style: TextStyle(
+                                                  fontWeight: FontWeight.w500,
+                                                  fontSize: width * .035,
+                                                ),
+                                              ),
+                                            ]),
+                                            Row(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Expanded(
+                                                  child: GestureDetector(
+                                                    onTap: () async {
+                                                      await Navigator.push(
+                                                        context,
+                                                        CupertinoPageRoute(
+                                                          builder: (_) =>
+                                                              D2dPlaceSearchPage(
+                                                            controller:
+                                                                toController,
+                                                            accentColor: Colors
+                                                                .redAccent,
+                                                            label: "Drop",
+                                                          ),
+                                                        ),
+                                                      );
+                                                      setState(() {});
+                                                    },
+                                                    child: Container(
+                                                      height: width * .125,
+                                                      padding: EdgeInsets.only(
+                                                          left: width * 0.03),
+                                                      decoration: BoxDecoration(
+                                                        color: Colors.white,
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(
+                                                                    width *
+                                                                        0.03),
+                                                      ),
+                                                      child: Row(
+                                                        mainAxisAlignment:
+                                                            MainAxisAlignment
+                                                                .spaceBetween,
+                                                        children: [
+                                                          Expanded(
+                                                            child: Text(
+                                                              toController.text
+                                                                      .isEmpty
+                                                                  ? "Enter Destination location"
+                                                                  : toController
+                                                                      .text,
+                                                              style: TextStyle(
+                                                                color: toController
+                                                                        .text
+                                                                        .isEmpty
+                                                                    ? Colors
+                                                                        .black
+                                                                        .withOpacity(
+                                                                            .5)
+                                                                    : Colors
+                                                                        .black,
+                                                                fontSize:
+                                                                    width *
+                                                                        0.035,
+                                                              ),
+                                                            ),
+                                                          ),
+                                                          Padding(
+                                                            padding:
+                                                                EdgeInsets.all(
+                                                                    width *
+                                                                        .01),
+                                                            child:
+                                                                GestureDetector(
+                                                              onTap: () =>
+                                                                  openRequestLocationSheet(
+                                                                      context,
+                                                                      "drop"),
+                                                              child: Container(
+                                                                height: double
+                                                                    .infinity,
+                                                                width: width *
+                                                                    .225,
+                                                                decoration:
+                                                                    BoxDecoration(
+                                                                  color: ColorConstant
+                                                                      .greenColor
+                                                                      .withOpacity(
+                                                                          .9),
+                                                                  borderRadius:
+                                                                      BorderRadius.circular(
+                                                                          width *
+                                                                              0.02),
+                                                                ),
+                                                                child: Center(
+                                                                  child: Text(
+                                                                    "Request\nLocation",
+                                                                    textAlign:
+                                                                        TextAlign
+                                                                            .center,
+                                                                    style:
+                                                                        TextStyle(
+                                                                      fontSize:
+                                                                          width *
+                                                                              .03,
+                                                                      fontWeight:
+                                                                          FontWeight
+                                                                              .w500,
+                                                                      color: Colors
+                                                                          .white,
+                                                                    ),
+                                                                  ),
+                                                                ),
+                                                              ),
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            // SizedBox(
+                                            //     height: width * .015),
+                                            Text(
+                                              toController.text,
+                                              style: TextStyle(
+                                                fontSize: width * .025,
+                                                color: Colors.black
+                                                    .withOpacity(.5),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
                                     ],
                                   ),
-                                ],
-                              ),
-                            );
-                          },
-                        ),
-                      ],
+                                );
+                              },
+                            ),
+                          );
+                        },
+                      ),
+
+                      SizedBox(height: width * .1),
 
                       // NEXT BUTTON
-                      SizedBox(height: width * .08),
                       GestureDetector(
-                        onTap: _nextPage,
+                        onTap: _onNext,
                         child: Container(
                           width: width * .4,
                           padding: EdgeInsets.symmetric(

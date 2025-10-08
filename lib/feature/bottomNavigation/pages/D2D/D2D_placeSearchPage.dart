@@ -896,6 +896,11 @@
 // }
 
 /////////////////
+///
+///
+///
+///
+
 import 'dart:async';
 
 import 'package:drivex/core/constants/localVariables.dart';
@@ -973,10 +978,28 @@ class _D2dPlaceSearchPageState extends State<D2dPlaceSearchPage> {
   final TextEditingController _nameCtrl = TextEditingController();
   final TextEditingController _phoneCtrl = TextEditingController();
   final TextEditingController _instructionCtrl = TextEditingController();
+  final TextEditingController _pkgOtherCtrl = TextEditingController();
+
   bool _useMyMobile = false;
+
+  // Package type selection (confirm sheet)
+  String? _pkgSelectedKey; // e.g., 'document', 'other'
+  bool get _showPkgOtherField => _pkgSelectedKey == 'other';
 
   // Track whether user confirmed (so we know whether to keep/clear text on pop)
   bool _confirmed = false;
+
+  // Package type map
+  final Map<String, Map<String, dynamic>> _packageTypeMap = const {
+    'document': {'label': 'Document', 'icon': Icons.description},
+    'box': {'label': 'Box', 'icon': Icons.inbox},
+    'food': {'label': 'Food', 'icon': Icons.fastfood},
+    'gift': {'label': 'Gift', 'icon': Icons.card_giftcard},
+    'electronics': {'label': 'Electronics', 'icon': Icons.devices_other},
+    'clothes': {'label': 'Clothes', 'icon': Icons.checkroom},
+    'fragile': {'label': 'Fragile', 'icon': Icons.emoji_objects},
+    'other': {'label': 'Other', 'icon': Icons.more_horiz},
+  };
 
   @override
   void initState() {
@@ -1004,8 +1027,6 @@ class _D2dPlaceSearchPageState extends State<D2dPlaceSearchPage> {
 
   @override
   void dispose() {
-    // If the page is being disposed without a confirmed selection,
-    // clear any partial/typed text from the parent controller.
     if (!_confirmed) {
       _searchCtrl.clear();
     }
@@ -1015,6 +1036,7 @@ class _D2dPlaceSearchPageState extends State<D2dPlaceSearchPage> {
     _nameCtrl.dispose();
     _phoneCtrl.dispose();
     _instructionCtrl.dispose();
+    _pkgOtherCtrl.dispose();
     super.dispose();
   }
 
@@ -1170,7 +1192,6 @@ class _D2dPlaceSearchPageState extends State<D2dPlaceSearchPage> {
       ),
     );
 
-    // Open the confirmation sheet
     _showConfirmSheet();
   }
 
@@ -1182,6 +1203,7 @@ class _D2dPlaceSearchPageState extends State<D2dPlaceSearchPage> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.white,
+      // ⬇️ No max-height constraints; let it expand to full content height.
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(
           top: Radius.circular(MediaQuery.of(context).size.width * .05),
@@ -1190,312 +1212,491 @@ class _D2dPlaceSearchPageState extends State<D2dPlaceSearchPage> {
       builder: (ctx) {
         final width = MediaQuery.of(ctx).size.width;
         final bottomInset = MediaQuery.of(ctx).viewInsets.bottom;
+        final inputH = width * .105; // uniform height for all fields
+        final packageTypeKeys =
+            _packageTypeMap.keys.toList(growable: false); // grid items
+
+        Widget buildLinedField({
+          required TextEditingController controller,
+          required String hint,
+          TextInputType? keyboardType,
+          Widget? suffixIcon,
+          bool enabled = true,
+        }) {
+          return SizedBox(
+            height: inputH,
+            child: TextField(
+              controller: controller,
+              keyboardType: keyboardType,
+              enabled: enabled,
+              maxLines: 1,
+              textAlignVertical: TextAlignVertical.center,
+              style: TextStyle(fontSize: width * .034),
+              decoration: InputDecoration(
+                hintText: hint,
+                hintStyle: TextStyle(fontSize: width * .032),
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: width * .035,
+                ),
+                suffixIcon: suffixIcon,
+                filled: true,
+                fillColor: Colors.white,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(width * .03),
+                  borderSide: const BorderSide(color: Color(0xFFDFE3EA)),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(width * .03),
+                  borderSide: const BorderSide(color: Color(0xFFDFE3EA)),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(width * .03),
+                  borderSide: const BorderSide(color: Color(0xFF2F6BFF)),
+                ),
+              ),
+            ),
+          );
+        }
+
+        Widget buildPackageTile(
+            String key, void Function(VoidCallback) setSheet) {
+          final item = _packageTypeMap[key]!;
+          final bool isSelected = _pkgSelectedKey == key;
+
+          return GestureDetector(
+            onTap: () {
+              setSheet(() {
+                _pkgSelectedKey = key;
+                if (!_showPkgOtherField) _pkgOtherCtrl.clear();
+              });
+            },
+            child: Container(
+              decoration: BoxDecoration(
+                color: isSelected ? Colors.blue.withOpacity(0.05) : null,
+                border: Border.all(
+                  color:
+                      isSelected ? Colors.blue : Colors.black.withOpacity(0.25),
+                  width: isSelected ? width * 0.005 : width * 0.003,
+                ),
+                borderRadius: BorderRadius.circular(width * 0.025),
+              ),
+              padding: EdgeInsets.symmetric(vertical: width * 0.02),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    item['icon'] as IconData,
+                    color: isSelected ? Colors.blue : Colors.black,
+                    size: width * 0.07,
+                  ),
+                  SizedBox(height: width * 0.015),
+                  Text(
+                    item['label'] as String,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: width * 0.025,
+                      color: isSelected ? Colors.blue : Colors.black,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
 
         return StatefulBuilder(
           builder: (ctx, setSheet) {
             bool canConfirm() =>
                 _nameCtrl.text.trim().isNotEmpty &&
-                _phoneCtrl.text.trim().isNotEmpty;
+                _phoneCtrl.text.trim().isNotEmpty &&
+                _pkgSelectedKey != null; // must select one item in grid
+
+            String? pkgLabel() {
+              if (_pkgSelectedKey == null) return null;
+              if (_pkgSelectedKey == 'other') {
+                final custom = _pkgOtherCtrl.text.trim();
+                return custom.isNotEmpty ? custom : 'Other';
+              }
+              return _packageTypeMap[_pkgSelectedKey!]!['label'] as String;
+            }
 
             return Padding(
               padding: EdgeInsets.only(bottom: bottomInset),
               child: SafeArea(
                 top: false,
                 child: SingleChildScrollView(
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: width * .05,
-                      vertical: width * .04,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // drag handle
-                        Center(
-                          child: Container(
-                            width: width * .18,
-                            height: width * .013,
-                            margin: EdgeInsets.only(bottom: width * .03),
-                            decoration: BoxDecoration(
-                              color: Colors.black12,
-                              borderRadius: BorderRadius.circular(width * .01),
-                            ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min, // ⬅️ Wrap to full content
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // drag handle
+                      Center(
+                        child: Container(
+                          width: width * .18,
+                          height: width * .013,
+                          margin: EdgeInsets.only(
+                              bottom: width * .03, top: width * .02),
+                          decoration: BoxDecoration(
+                            color: Colors.black12,
+                            borderRadius: BorderRadius.circular(width * .01),
                           ),
                         ),
+                      ),
 
-                        // Location row
-                        Row(
+                      Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: width * .05,
+                          vertical: width * .02,
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Icon(Icons.place,
-                                color: Colors.green, size: width * .05),
-                            SizedBox(width: width * .02),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    _pendingAddressTitle ?? widget.label,
-                                    style: TextStyle(
-                                      fontSize: width * .04,
-                                      fontWeight: FontWeight.w700,
-                                    ),
+                            // Location row
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Icon(Icons.place,
+                                    color: Colors.green, size: width * .05),
+                                SizedBox(width: width * .02),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        _pendingAddressTitle ?? widget.label,
+                                        style: TextStyle(
+                                          fontSize: width * .04,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                      SizedBox(height: width * .01),
+                                      Text(
+                                        _pendingFullAddress ?? '',
+                                        style: TextStyle(
+                                          color: Colors.black87,
+                                          height: 1.2,
+                                          fontSize: width * .032,
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                  SizedBox(height: width * .01),
-                                  Text(
-                                    _pendingFullAddress ?? '',
-                                    style: TextStyle(
-                                      color: Colors.black87,
-                                      height: 1.2,
-                                      fontSize: width * .032,
-                                    ),
-                                  ),
-                                ],
-                              ),
+                                ),
+                                TextButton(
+                                  onPressed: () => Navigator.pop(ctx),
+                                  child: Text("Change",
+                                      style: TextStyle(fontSize: width * .032)),
+                                ),
+                              ],
                             ),
-                            TextButton(
-                              onPressed: () => Navigator.pop(ctx),
-                              child: Text(
-                                "Change",
-                                style: TextStyle(fontSize: width * .032),
-                              ),
-                            ),
-                          ],
-                        ),
-                        SizedBox(height: width * .03),
+                            SizedBox(height: width * .03),
 
-                        // House/Shop (optional)
-                        TextField(
-                          controller: _houseCtrl,
-                          style: TextStyle(fontSize: width * .034),
-                          decoration: InputDecoration(
-                            hintText: "House / Apartment / Shop (optional)",
-                            hintStyle: TextStyle(fontSize: width * .032),
-                            filled: true,
-                            fillColor: Colors.white,
-                            contentPadding: EdgeInsets.symmetric(
-                              horizontal: width * .035,
-                              vertical: width * .03,
+                            // House/Shop
+                            buildLinedField(
+                              controller: _houseCtrl,
+                              hint: "House / Apartment / Shop (optional)",
                             ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(width * .03),
-                              borderSide:
-                                  const BorderSide(color: Color(0xFFDFE3EA)),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(width * .03),
-                              borderSide:
-                                  const BorderSide(color: Color(0xFFDFE3EA)),
-                            ),
-                          ),
-                        ),
-                        SizedBox(height: width * .03),
+                            SizedBox(height: width * .02),
 
-                        // Sender name (REQUIRED)
-                        Text("Sender's Name",
-                            style: TextStyle(
-                                fontSize: width * .032,
-                                fontWeight: FontWeight.w500)),
-                        SizedBox(height: width * .015),
-                        TextField(
-                          controller: _nameCtrl,
-                          onChanged: (_) => setSheet(() {}),
-                          style: TextStyle(fontSize: width * .034),
-                          decoration: InputDecoration(
-                            hintText: "Enter sender name",
-                            hintStyle: TextStyle(fontSize: width * .032),
-                            filled: true,
-                            fillColor: Colors.white,
-                            contentPadding: EdgeInsets.symmetric(
-                              horizontal: width * .035,
-                              vertical: width * .03,
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(width * .03),
-                              borderSide:
-                                  const BorderSide(color: Color(0xFFDFE3EA)),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(width * .03),
-                              borderSide:
-                                  const BorderSide(color: Color(0xFFDFE3EA)),
-                            ),
-                            suffixIcon: Icon(Icons.recent_actors_outlined,
-                                size: width * .05),
-                          ),
-                        ),
-                        SizedBox(height: width * .03),
-
-                        // Sender phone (REQUIRED)
-                        Text("Sender's Mobile number",
-                            style: TextStyle(
-                                fontSize: width * .032,
-                                fontWeight: FontWeight.w500)),
-                        SizedBox(height: width * .015),
-                        TextField(
-                          controller: _phoneCtrl,
-                          keyboardType: TextInputType.phone,
-                          onChanged: (_) => setSheet(() {}),
-                          style: TextStyle(fontSize: width * .034),
-                          decoration: InputDecoration(
-                            hintText: "Enter mobile number",
-                            hintStyle: TextStyle(fontSize: width * .032),
-                            filled: true,
-                            fillColor: Colors.white,
-                            contentPadding: EdgeInsets.symmetric(
-                              horizontal: width * .035,
-                              vertical: width * .03,
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(width * .03),
-                              borderSide:
-                                  const BorderSide(color: Color(0xFFDFE3EA)),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(width * .03),
-                              borderSide:
-                                  const BorderSide(color: Color(0xFFDFE3EA)),
-                            ),
-                          ),
-                        ),
-                        SizedBox(height: width * .02),
-
-                        // Use my mobile checkbox
-                        Row(
-                          children: [
+                            // Sender name
+                            Text("Sender's Name",
+                                style: TextStyle(
+                                    fontSize: width * .032,
+                                    fontWeight: FontWeight.w500)),
+                            SizedBox(height: width * .01),
                             SizedBox(
-                              width: width * .06,
-                              height: width * .06,
-                              child: Checkbox(
-                                value: _useMyMobile,
-                                onChanged: (v) {
-                                  setSheet(() {
-                                    _useMyMobile = v ?? false;
-                                    if (_useMyMobile && userMobile.isNotEmpty) {
-                                      _phoneCtrl.text = userMobile;
-                                    }
-                                  });
-                                },
+                              height: inputH,
+                              child: TextField(
+                                controller: _nameCtrl,
+                                onChanged: (_) => setSheet(() {}),
+                                maxLines: 1,
+                                textAlignVertical: TextAlignVertical.center,
+                                style: TextStyle(fontSize: width * .034),
+                                decoration: InputDecoration(
+                                  hintText: "Enter sender name",
+                                  hintStyle: TextStyle(fontSize: width * .032),
+                                  contentPadding: EdgeInsets.symmetric(
+                                      horizontal: width * .035),
+                                  filled: true,
+                                  fillColor: Colors.white,
+                                  border: OutlineInputBorder(
+                                    borderRadius:
+                                        BorderRadius.circular(width * .03),
+                                    borderSide: const BorderSide(
+                                        color: Color(0xFFDFE3EA)),
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius:
+                                        BorderRadius.circular(width * .03),
+                                    borderSide: const BorderSide(
+                                        color: Color(0xFFDFE3EA)),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius:
+                                        BorderRadius.circular(width * .03),
+                                    borderSide: const BorderSide(
+                                        color: Color(0xFF2F6BFF)),
+                                  ),
+                                  suffixIcon: Icon(Icons.recent_actors_outlined,
+                                      size: width * .05),
+                                ),
                               ),
                             ),
-                            SizedBox(width: width * .02),
-                            Expanded(
-                              child: Text(
-                                "Use my mobile number${userMobile.isNotEmpty ? " : $userMobile" : ""}",
-                                style: TextStyle(fontSize: width * .032),
+                            SizedBox(height: width * .02),
+
+                            // Sender phone
+                            Text("Sender's Mobile number",
+                                style: TextStyle(
+                                    fontSize: width * .032,
+                                    fontWeight: FontWeight.w500)),
+                            SizedBox(height: width * .01),
+                            SizedBox(
+                              height: inputH,
+                              child: TextField(
+                                controller: _phoneCtrl,
+                                keyboardType: TextInputType.phone,
+                                onChanged: (_) => setSheet(() {}),
+                                maxLines: 1,
+                                textAlignVertical: TextAlignVertical.center,
+                                style: TextStyle(fontSize: width * .034),
+                                decoration: InputDecoration(
+                                  hintText: "Enter mobile number",
+                                  hintStyle: TextStyle(fontSize: width * .032),
+                                  contentPadding: EdgeInsets.symmetric(
+                                      horizontal: width * .035),
+                                  filled: true,
+                                  fillColor: Colors.white,
+                                  border: OutlineInputBorder(
+                                    borderRadius:
+                                        BorderRadius.circular(width * .03),
+                                    borderSide: const BorderSide(
+                                        color: Color(0xFFDFE3EA)),
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius:
+                                        BorderRadius.circular(width * .03),
+                                    borderSide: const BorderSide(
+                                        color: Color(0xFFDFE3EA)),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius:
+                                        BorderRadius.circular(width * .03),
+                                    borderSide: const BorderSide(
+                                        color: Color(0xFF2F6BFF)),
+                                  ),
+                                ),
                               ),
                             ),
+                            SizedBox(height: width * .01),
+
+                            // Use my mobile checkbox
+                            Row(
+                              children: [
+                                SizedBox(
+                                  width: width * .06,
+                                  height: width * .06,
+                                  child: Checkbox(
+                                    value: _useMyMobile,
+                                    onChanged: (v) {
+                                      setSheet(() {
+                                        _useMyMobile = v ?? false;
+                                        if (_useMyMobile &&
+                                            userMobile.isNotEmpty) {
+                                          _phoneCtrl.text = userMobile;
+                                        }
+                                      });
+                                    },
+                                  ),
+                                ),
+                                SizedBox(width: width * .02),
+                                Expanded(
+                                  child: Text(
+                                    "Use my mobile number${userMobile.isNotEmpty ? " : $userMobile" : ""}",
+                                    style: TextStyle(fontSize: width * .032),
+                                  ),
+                                ),
+                              ],
+                            ),
+
+                            SizedBox(height: width * .03),
+
+                            // Package Type
+                            Text(
+                              "Package Type (required)",
+                              style: TextStyle(
+                                  fontSize: width * .034,
+                                  fontWeight: FontWeight.w700),
+                            ),
+                            SizedBox(height: width * .02),
+
+                            GridView.builder(
+                              padding: EdgeInsets.zero,
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: packageTypeKeys.length,
+                              gridDelegate:
+                                  SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 4,
+                                mainAxisSpacing: width * 0.02,
+                                crossAxisSpacing: width * 0.02,
+                                childAspectRatio: 1,
+                              ),
+                              itemBuilder: (context, index) {
+                                final key = packageTypeKeys[index];
+                                return buildPackageTile(key, setSheet);
+                              },
+                            ),
+
+                            if (_showPkgOtherField) ...[
+                              SizedBox(height: width * .02),
+                              SizedBox(
+                                height: inputH,
+                                child: TextField(
+                                  controller: _pkgOtherCtrl,
+                                  maxLines: 1,
+                                  textAlignVertical: TextAlignVertical.center,
+                                  style: TextStyle(fontSize: width * .034),
+                                  decoration: const InputDecoration(
+                                    labelText: "Enter package type",
+                                    border: OutlineInputBorder(),
+                                  ),
+                                ),
+                              ),
+                            ],
+
+                            SizedBox(height: width * .03),
+
+                            // Instruction (single-line, same height)
+                            Text(
+                              "Courier instruction (optional)",
+                              style: TextStyle(
+                                  fontSize: width * .032,
+                                  fontWeight: FontWeight.w500),
+                            ),
+                            SizedBox(height: width * .01),
+                            SizedBox(
+                              height: inputH,
+                              child: TextField(
+                                controller: _instructionCtrl,
+                                maxLines: 1,
+                                textAlignVertical: TextAlignVertical.center,
+                                style: TextStyle(fontSize: width * .034),
+                                decoration: InputDecoration(
+                                  hintText:
+                                      "E.g. call on arrival, leave with security, fragile, etc.",
+                                  hintStyle: TextStyle(fontSize: width * .032),
+                                  contentPadding: EdgeInsets.symmetric(
+                                      horizontal: width * .035),
+                                  filled: true,
+                                  fillColor: Colors.white,
+                                  border: OutlineInputBorder(
+                                    borderRadius:
+                                        BorderRadius.circular(width * .03),
+                                    borderSide: const BorderSide(
+                                        color: Color(0xFFDFE3EA)),
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius:
+                                        BorderRadius.circular(width * .03),
+                                    borderSide: const BorderSide(
+                                        color: Color(0xFFDFE3EA)),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius:
+                                        BorderRadius.circular(width * .03),
+                                    borderSide: const BorderSide(
+                                        color: Color(0xFF2F6BFF)),
+                                  ),
+                                ),
+                              ),
+                            ),
+
+                            SizedBox(height: width * .04),
+
+                            // Confirm button
+                            SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: canConfirm()
+                                      ? const Color(0xFF2F6BFF)
+                                      : const Color(0xFFBFC7DB),
+                                  foregroundColor: Colors.white,
+                                  padding: EdgeInsets.symmetric(
+                                    vertical: width * .04,
+                                    horizontal: width * .035,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius:
+                                        BorderRadius.circular(width * .035),
+                                  ),
+                                ),
+                                onPressed: canConfirm()
+                                    ? () {
+                                        _confirmed = true;
+
+                                        // write address back to parent textfield
+                                        if (_pendingFullAddress != null) {
+                                          _searchCtrl.text =
+                                              _pendingFullAddress!;
+                                        }
+
+                                        final String? pkgKey = _pkgSelectedKey;
+                                        final String? pkgText = pkgLabel();
+                                        final String? pkgCustom =
+                                            _showPkgOtherField &&
+                                                    _pkgOtherCtrl.text
+                                                        .trim()
+                                                        .isNotEmpty
+                                                ? _pkgOtherCtrl.text.trim()
+                                                : null;
+
+                                        Navigator.pop(ctx);
+                                        Navigator.of(context).pop({
+                                          'address': _pendingFullAddress ??
+                                              _searchCtrl.text,
+                                          'latLng': _pendingLatLng,
+                                          'label': widget.label,
+                                          'house': _houseCtrl.text.trim(),
+                                          'senderName': _nameCtrl.text.trim(),
+                                          'senderPhone': _phoneCtrl.text.trim(),
+                                          'instruction':
+                                              _instructionCtrl.text.trim(),
+                                          'packageTypeKey':
+                                              pkgKey, // e.g., 'food', 'other'
+                                          'packageTypeLabel':
+                                              pkgText, // user-friendly label
+                                          'packageTypeCustom':
+                                              pkgCustom // text if "Other"
+                                        });
+                                      }
+                                    : null,
+                                child: Text(
+                                  "Confirm and Proceed",
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: width * .036,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            if (!canConfirm())
+                              Padding(
+                                padding: EdgeInsets.only(top: width * .02),
+                                child: Text(
+                                  "Select a package type, and enter sender name & mobile number to continue.",
+                                  style: TextStyle(
+                                    color: Colors.red.shade600,
+                                    fontSize: width * .03,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
                           ],
                         ),
-
-                        SizedBox(height: width * .02),
-                        Text(
-                          "Courier instruction (optional)",
-                          style: TextStyle(
-                            fontSize: width * .032,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        SizedBox(height: width * .015),
-                        TextField(
-                          controller: _instructionCtrl,
-                          maxLines: 3,
-                          style: TextStyle(fontSize: width * .034),
-                          decoration: InputDecoration(
-                            hintText:
-                                "E.g. call on arrival, leave with security, fragile, etc.",
-                            hintStyle: TextStyle(fontSize: width * .032),
-                            filled: true,
-                            fillColor: Colors.white,
-                            contentPadding: EdgeInsets.symmetric(
-                              horizontal: width * .035,
-                              vertical: width * .03,
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(width * .03),
-                              borderSide:
-                                  const BorderSide(color: Color(0xFFDFE3EA)),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(width * .03),
-                              borderSide:
-                                  const BorderSide(color: Color(0xFFDFE3EA)),
-                            ),
-                          ),
-                        ),
-                        SizedBox(height: width * .04),
-
-                        Text("Save as (optional):",
-                            style: TextStyle(
-                                color: Colors.black54, fontSize: width * .03)),
-                        SizedBox(height: width * .04),
-
-                        // Confirm button (enabled only when name & phone filled)
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: canConfirm()
-                                  ? const Color(0xFF2F6BFF)
-                                  : const Color(0xFFBFC7DB),
-                              foregroundColor: Colors.white,
-                              padding: EdgeInsets.symmetric(
-                                vertical: width * .04,
-                                horizontal: width * .035,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius:
-                                    BorderRadius.circular(width * .035),
-                              ),
-                            ),
-                            onPressed: canConfirm()
-                                ? () {
-                                    _confirmed = true; // mark as confirmed
-
-                                    // write value back to parent textfield
-                                    if (_pendingFullAddress != null) {
-                                      _searchCtrl.text = _pendingFullAddress!;
-                                    }
-                                    // close sheet
-                                    Navigator.pop(ctx);
-                                    // pop page with payload
-                                    Navigator.of(context).pop({
-                                      'address': _pendingFullAddress ??
-                                          _searchCtrl.text,
-                                      'latLng': _pendingLatLng,
-                                      'label': widget.label,
-                                      'house': _houseCtrl.text.trim(),
-                                      'senderName': _nameCtrl.text.trim(),
-                                      'senderPhone': _phoneCtrl.text.trim(),
-                                      'instruction':
-                                          _instructionCtrl.text.trim()
-                                    });
-                                  }
-                                : null,
-                            child: Text(
-                              "Confirm and Proceed",
-                              style: TextStyle(
-                                fontWeight: FontWeight.w700,
-                                fontSize: width * .036,
-                              ),
-                            ),
-                          ),
-                        ),
-                        if (!canConfirm())
-                          Padding(
-                            padding: EdgeInsets.only(top: width * .02),
-                            child: Text(
-                              "Enter sender name and mobile number to continue.",
-                              style: TextStyle(
-                                color: Colors.red.shade600,
-                                fontSize: width * .03,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ),
-                        SizedBox(height: width * .02),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -1520,349 +1721,335 @@ class _D2dPlaceSearchPageState extends State<D2dPlaceSearchPage> {
 
     final String hintText = 'Search ${widget.label.toLowerCase()} location';
 
-    // Intercept back navigation to clear partial text if not confirmed
-    return WillPopScope(
-      onWillPop: () async {
-        if (!_confirmed) {
-          _searchCtrl.clear(); // blank out partial search
-        }
-        return true; // allow pop
-      },
-      child: Scaffold(
-        body: GestureDetector(
-          onTap: () => FocusScope.of(context).unfocus(),
-          behavior: HitTestBehavior.translucent,
-          child: Stack(
-            children: [
-              GoogleMap(
-                initialCameraPosition: _initialPosition,
-                onMapCreated: (controller) async {
-                  mapController = controller;
-                  if (_pendingCameraTarget != null) {
-                    await mapController!.animateCamera(
-                      CameraUpdate.newCameraPosition(
-                        CameraPosition(
-                            target: _pendingCameraTarget!, zoom: 15.0),
-                      ),
-                    );
-                    _pendingCameraTarget = null;
-                  }
-                },
-                myLocationEnabled: true,
-                myLocationButtonEnabled: true,
-                zoomControlsEnabled: false,
-                markers: _markers,
-                onCameraMove: (pos) => _biasCenter = pos.target,
-              ),
+    return Scaffold(
+      body: GestureDetector(
+        onTap: () => FocusScope.of(context).unfocus(),
+        behavior: HitTestBehavior.translucent,
+        child: Stack(
+          children: [
+            GoogleMap(
+              initialCameraPosition: _initialPosition,
+              onMapCreated: (controller) async {
+                mapController = controller;
+                if (_pendingCameraTarget != null) {
+                  await mapController!.animateCamera(
+                    CameraUpdate.newCameraPosition(
+                      CameraPosition(target: _pendingCameraTarget!, zoom: 15.0),
+                    ),
+                  );
+                  _pendingCameraTarget = null;
+                }
+              },
+              myLocationEnabled: true,
+              myLocationButtonEnabled: true,
+              zoomControlsEnabled: false,
+              markers: _markers,
+              onCameraMove: (pos) => _biasCenter = pos.target,
+            ),
 
-              // Search + suggestions
-              SafeArea(
-                child: SizedBox(
-                  width: width * 1,
-                  child: Column(
-                    children: [
-                      SizedBox(height: spacerTop),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // colored leading dot
-                          SizedBox(
-                            height: width * .105,
-                            child: Center(
-                              child: Container(
-                                width: width * 0.04,
-                                height: width * 0.04,
-                                decoration: BoxDecoration(
-                                  border: Border.all(
-                                    width: width * .005,
-                                    color: Colors.black.withOpacity(.25),
-                                  ),
-                                  color: widget.accentColor,
-                                  shape: BoxShape.circle,
+            // Search + suggestions
+            SafeArea(
+              child: SizedBox(
+                width: width * 1,
+                child: Column(
+                  children: [
+                    SizedBox(height: spacerTop),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // colored leading dot
+                        SizedBox(
+                          height: fieldHeight,
+                          child: Center(
+                            child: Container(
+                              width: width * 0.04,
+                              height: width * 0.04,
+                              decoration: BoxDecoration(
+                                border: Border.all(
+                                  width: width * .005,
+                                  color: Colors.black.withOpacity(.25),
                                 ),
-                                child: Center(
-                                  child: Container(
-                                    width: width * 0.02,
-                                    height: width * 0.02,
-                                    decoration: BoxDecoration(
-                                      color: Colors.black.withOpacity(0.5),
-                                      shape: BoxShape.circle,
-                                    ),
+                                color: widget.accentColor,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Center(
+                                child: Container(
+                                  width: width * 0.02,
+                                  height: width * 0.02,
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withOpacity(0.5),
+                                    shape: BoxShape.circle,
                                   ),
                                 ),
                               ),
                             ),
                           ),
+                        ),
 
-                          // Search field + suggestion panel
-                          Container(
-                            width: width * .82,
-                            decoration:
-                                const BoxDecoration(color: Colors.transparent),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                // search field
+                        // Search field + suggestion panel
+                        Container(
+                          width: width * .82,
+                          decoration:
+                              const BoxDecoration(color: Colors.transparent),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              // search field
+                              Container(
+                                height: fieldHeight,
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius:
+                                      BorderRadius.circular(width * .035),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.12),
+                                      blurRadius: width * .02,
+                                      offset: Offset(0, width * .0075),
+                                    ),
+                                  ],
+                                ),
+                                child: TextField(
+                                  controller: _searchCtrl,
+                                  focusNode: _searchFocus,
+                                  onChanged: _onChanged,
+                                  textInputAction: TextInputAction.search,
+                                  decoration: InputDecoration(
+                                    hintText: hintText,
+                                    hintStyle:
+                                        TextStyle(fontSize: width * .032),
+                                    prefixIcon: Icon(
+                                      Icons.search,
+                                      size: iconSize,
+                                      color: widget.accentColor,
+                                    ),
+                                    suffixIcon: _searchCtrl.text.isEmpty
+                                        ? null
+                                        : IconButton(
+                                            icon: Icon(Icons.close,
+                                                size: iconSize),
+                                            onPressed: () {
+                                              setState(() {
+                                                _searchCtrl.clear();
+                                                _results = [];
+                                                _error = null;
+                                              });
+                                            },
+                                          ),
+                                    border: InputBorder.none,
+                                    contentPadding:
+                                        EdgeInsets.only(top: width * .0125),
+                                  ),
+                                  style: TextStyle(fontSize: width * .035),
+                                ),
+                              ),
+
+                              SizedBox(height: gap),
+
+                              // suggestion panel (INLINE)
+                              if (_searchFocus.hasFocus &&
+                                  (_loading ||
+                                      _results.isNotEmpty ||
+                                      (_error != null &&
+                                          _searchCtrl.text.isNotEmpty)))
                                 Container(
-                                  height: fieldHeight,
+                                  padding: EdgeInsets.all(panelPad),
+                                  constraints:
+                                      BoxConstraints(maxHeight: maxPanelH),
                                   decoration: BoxDecoration(
-                                    color: Colors.white,
+                                    color: const Color(0xFFEDEDED),
                                     borderRadius:
-                                        BorderRadius.circular(width * .035),
+                                        BorderRadius.circular(width * .04),
+                                    border: Border.all(
+                                      color: Colors.black26,
+                                      width: borderWidth,
+                                    ),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: Colors.black.withOpacity(0.12),
-                                        blurRadius: width * .02,
-                                        offset: Offset(0, width * .0075),
+                                        color: Colors.black.withOpacity(.18),
+                                        blurRadius: width * .03,
+                                        offset: Offset(0, width * .01),
                                       ),
                                     ],
                                   ),
-                                  child: TextField(
-                                    controller: _searchCtrl,
-                                    focusNode: _searchFocus,
-                                    onChanged: _onChanged,
-                                    textInputAction: TextInputAction.search,
-                                    decoration: InputDecoration(
-                                      hintText: hintText,
-                                      hintStyle:
-                                          TextStyle(fontSize: width * .032),
-                                      prefixIcon: Icon(
-                                        Icons.search,
-                                        size: iconSize,
-                                        color: widget.accentColor,
-                                      ),
-                                      suffixIcon: _searchCtrl.text.isEmpty
-                                          ? null
-                                          : IconButton(
-                                              icon: Icon(Icons.close,
-                                                  size: iconSize),
-                                              onPressed: () {
-                                                setState(() {
-                                                  _searchCtrl.clear();
-                                                  _results = [];
-                                                  _error = null;
-                                                });
-                                              },
-                                            ),
-                                      border: InputBorder.none,
-                                      contentPadding:
-                                          EdgeInsets.only(top: width * .0125),
-                                    ),
-                                    style: TextStyle(fontSize: width * .035),
-                                  ),
-                                ),
-
-                                SizedBox(height: gap),
-
-                                // suggestion panel (INLINE)
-                                if (_searchFocus.hasFocus &&
-                                    (_loading ||
-                                        _results.isNotEmpty ||
-                                        (_error != null &&
-                                            _searchCtrl.text.isNotEmpty)))
-                                  Container(
-                                    padding: EdgeInsets.all(panelPad),
-                                    constraints:
-                                        BoxConstraints(maxHeight: maxPanelH),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFFEDEDED),
-                                      borderRadius:
-                                          BorderRadius.circular(width * .04),
-                                      border: Border.all(
-                                        color: Colors.black26,
-                                        width: borderWidth,
-                                      ),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.black.withOpacity(.18),
-                                          blurRadius: width * .03,
-                                          offset: Offset(0, width * .01),
+                                  child: Builder(builder: (context) {
+                                    if (_loading) {
+                                      return SizedBox(
+                                        height: width * .08,
+                                        child: const Center(
+                                          child: CupertinoActivityIndicator(),
                                         ),
-                                      ],
-                                    ),
-                                    child: Builder(builder: (context) {
-                                      if (_loading) {
-                                        return SizedBox(
-                                          height: width * .08,
-                                          child: const Center(
-                                            child: CupertinoActivityIndicator(),
-                                          ),
-                                        );
-                                      }
+                                      );
+                                    }
 
-                                      if (_error != null) {
-                                        return Padding(
-                                          padding: EdgeInsets.all(width * .01),
-                                          child: Text(
-                                            _error!,
-                                            style: TextStyle(
-                                              color: Colors.redAccent,
-                                              fontSize: width * .032,
+                                    if (_error != null) {
+                                      return Padding(
+                                        padding: EdgeInsets.all(width * .01),
+                                        child: Text(
+                                          _error!,
+                                          style: TextStyle(
+                                            color: Colors.redAccent,
+                                            fontSize: width * .032,
+                                          ),
+                                        ),
+                                      );
+                                    }
+
+                                    if (_results.isEmpty) {
+                                      return Column(
+                                        children: List.generate(4, (i) {
+                                          return Container(
+                                            margin: EdgeInsets.symmetric(
+                                              vertical: gap * .6,
                                             ),
-                                          ),
-                                        );
-                                      }
+                                            decoration: BoxDecoration(
+                                              color: Colors.white,
+                                              borderRadius:
+                                                  BorderRadius.circular(
+                                                      cardRadius),
+                                              boxShadow: [
+                                                BoxShadow(
+                                                  color: Colors.black
+                                                      .withOpacity(.06),
+                                                  blurRadius: width * .02,
+                                                  offset:
+                                                      Offset(0, width * .005),
+                                                ),
+                                              ],
+                                            ),
+                                            padding: EdgeInsets.symmetric(
+                                              horizontal: width * .022,
+                                              vertical: width * .018,
+                                            ),
+                                            child:
+                                                SizedBox(height: width * .03),
+                                          );
+                                        }),
+                                      );
+                                    }
 
-                                      if (_results.isEmpty) {
-                                        // small skeletons
-                                        return Column(
-                                          children: List.generate(4, (i) {
-                                            return Container(
-                                              margin: EdgeInsets.symmetric(
-                                                vertical: gap * .6,
-                                              ),
-                                              decoration: BoxDecoration(
-                                                color: Colors.white,
-                                                borderRadius:
-                                                    BorderRadius.circular(
-                                                        cardRadius),
-                                                boxShadow: [
-                                                  BoxShadow(
-                                                    color: Colors.black
-                                                        .withOpacity(.06),
-                                                    blurRadius: width * .02,
-                                                    offset:
-                                                        Offset(0, width * .005),
-                                                  ),
-                                                ],
-                                              ),
-                                              padding: EdgeInsets.symmetric(
-                                                horizontal: width * .022,
-                                                vertical: width * .018,
-                                              ),
-                                              child:
-                                                  SizedBox(height: width * .03),
-                                            );
-                                          }),
-                                        );
-                                      }
+                                    // results
+                                    return ListView.separated(
+                                      padding: EdgeInsets.zero,
+                                      shrinkWrap: true,
+                                      itemCount: _results.length,
+                                      separatorBuilder: (_, __) =>
+                                          SizedBox(height: gap * .6),
+                                      itemBuilder: (context, i) {
+                                        final p = _results[i];
+                                        final main =
+                                            p.structuredFormatting?.mainText ??
+                                                (p.description ?? '');
+                                        final secondary = p.structuredFormatting
+                                                ?.secondaryText ??
+                                            '';
 
-                                      // results
-                                      return ListView.separated(
-                                        padding: EdgeInsets.zero,
-                                        shrinkWrap: true,
-                                        itemCount: _results.length,
-                                        separatorBuilder: (_, __) =>
-                                            SizedBox(height: gap * .6),
-                                        itemBuilder: (context, i) {
-                                          final p = _results[i];
-                                          final main = p.structuredFormatting
-                                                  ?.mainText ??
-                                              (p.description ?? '');
-                                          final secondary = p
-                                                  .structuredFormatting
-                                                  ?.secondaryText ??
-                                              '';
-
-                                          return InkWell(
-                                            onTap: () => _selectPrediction(p),
-                                            borderRadius: BorderRadius.circular(
-                                                cardRadius),
-                                            child: Container(
-                                              padding: EdgeInsets.symmetric(
-                                                horizontal: width * .022,
-                                                vertical: width * .018,
-                                              ),
-                                              decoration: BoxDecoration(
-                                                color: Colors.white,
-                                                borderRadius:
-                                                    BorderRadius.circular(
-                                                        cardRadius),
-                                                boxShadow: [
-                                                  BoxShadow(
-                                                    color: Colors.black
-                                                        .withOpacity(.06),
-                                                    blurRadius: width * .02,
-                                                    offset:
-                                                        Offset(0, width * .005),
+                                        return InkWell(
+                                          onTap: () => _selectPrediction(p),
+                                          borderRadius:
+                                              BorderRadius.circular(cardRadius),
+                                          child: Container(
+                                            padding: EdgeInsets.symmetric(
+                                              horizontal: width * .022,
+                                              vertical: width * .018,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: Colors.white,
+                                              borderRadius:
+                                                  BorderRadius.circular(
+                                                      cardRadius),
+                                              boxShadow: [
+                                                BoxShadow(
+                                                  color: Colors.black
+                                                      .withOpacity(.06),
+                                                  blurRadius: width * .02,
+                                                  offset:
+                                                      Offset(0, width * .005),
+                                                ),
+                                              ],
+                                            ),
+                                            child: Row(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Container(
+                                                  width: width * .06,
+                                                  height: width * .06,
+                                                  decoration: BoxDecoration(
+                                                    shape: BoxShape.circle,
+                                                    color: widget.accentColor
+                                                        .withOpacity(.12),
                                                   ),
-                                                ],
-                                              ),
-                                              child: Row(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: [
-                                                  Container(
-                                                    width: width * .06,
-                                                    height: width * .06,
-                                                    decoration: BoxDecoration(
-                                                      shape: BoxShape.circle,
-                                                      color: widget.accentColor
-                                                          .withOpacity(.12),
-                                                    ),
-                                                    child: Icon(
-                                                      Icons.place_outlined,
-                                                      size: iconSize,
-                                                      color: widget.accentColor,
-                                                    ),
+                                                  child: Icon(
+                                                    Icons.place_outlined,
+                                                    size: iconSize,
+                                                    color: widget.accentColor,
                                                   ),
-                                                  SizedBox(width: width * .02),
-                                                  Expanded(
-                                                    child: Column(
-                                                      crossAxisAlignment:
-                                                          CrossAxisAlignment
-                                                              .start,
-                                                      children: [
+                                                ),
+                                                SizedBox(width: width * .02),
+                                                Expanded(
+                                                  child: Column(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .start,
+                                                    children: [
+                                                      Text(
+                                                        main,
+                                                        maxLines: 2,
+                                                        overflow: TextOverflow
+                                                            .ellipsis,
+                                                        style: TextStyle(
+                                                          fontSize:
+                                                              width * .034,
+                                                          fontWeight:
+                                                              FontWeight.w600,
+                                                        ),
+                                                      ),
+                                                      if (secondary
+                                                          .isNotEmpty) ...[
+                                                        SizedBox(
+                                                            height:
+                                                                width * .005),
                                                         Text(
-                                                          main,
+                                                          secondary,
                                                           maxLines: 2,
                                                           overflow: TextOverflow
                                                               .ellipsis,
                                                           style: TextStyle(
                                                             fontSize:
-                                                                width * .034,
-                                                            fontWeight:
-                                                                FontWeight.w600,
+                                                                width * .028,
+                                                            color: Colors.black
+                                                                .withOpacity(
+                                                                    .6),
                                                           ),
                                                         ),
-                                                        if (secondary
-                                                            .isNotEmpty) ...[
-                                                          SizedBox(
-                                                              height:
-                                                                  width * .005),
-                                                          Text(
-                                                            secondary,
-                                                            maxLines: 2,
-                                                            overflow:
-                                                                TextOverflow
-                                                                    .ellipsis,
-                                                            style: TextStyle(
-                                                              fontSize:
-                                                                  width * .028,
-                                                              color: Colors
-                                                                  .black
-                                                                  .withOpacity(
-                                                                      .6),
-                                                            ),
-                                                          ),
-                                                        ],
                                                       ],
-                                                    ),
+                                                    ],
                                                   ),
-                                                  SizedBox(width: width * .01),
-                                                  Icon(Icons.north_east,
-                                                      size: iconSize,
-                                                      color: Colors.black45),
-                                                ],
-                                              ),
+                                                ),
+                                                SizedBox(width: width * .01),
+                                                Icon(Icons.north_east,
+                                                    size: iconSize,
+                                                    color: Colors.black45),
+                                              ],
                                             ),
-                                          );
-                                        },
-                                      );
-                                    }),
-                                  ),
-                              ],
-                            ),
+                                          ),
+                                        );
+                                      },
+                                    );
+                                  }),
+                                ),
+                            ],
                           ),
-                        ],
-                      ),
-                    ],
-                  ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
