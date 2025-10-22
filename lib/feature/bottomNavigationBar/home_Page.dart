@@ -4,7 +4,11 @@ import 'package:drivex/core/constants/icon_Constants.dart';
 import 'package:drivex/core/constants/imageConstants.dart';
 import 'package:drivex/core/constants/localVariables.dart';
 import 'package:drivex/core/widgets/BackGroundTopGradient.dart';
+import 'package:drivex/feature/bookings/screens/cancel_page.dart';
+import 'package:drivex/feature/bookings/screens/details_page.dart';
+import 'package:drivex/feature/bookings/screens/reschedule.dart';
 import 'package:drivex/feature/bottomNavigationBar/notification_page.dart';
+import 'package:drivex/feature/cab/screens/cab_page.dart';
 import 'package:drivex/feature/drivers_page/screens/drivers_list.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -21,35 +25,41 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   bool favorite = false;
   int selectIndex = 0;
-  List upComings = [
+  final List<Map<String, dynamic>> upComings = [
     {
-      "icon": IconConstants.carRide,
-      "heading": "Ride",
-      "date": "Today at 12:30 PM",
-      "to": "Tech Store Plaza",
-      "from": "Perinthalmanna",
-      "person": "Sarah Chen",
-      "car_type": "Honda Civic",
+      "type": "Driver",
+      "from": "190 Blacker Ctr.beach",
+      "to": "402 Banglour road",
+      "dateTime": "16 Jul 2026 - 3:45 PM",
+      "driver": "Budi Susanto",
+      "payment": "Cash",
+      "image": "assets/images/profile_pic.jpg",
     },
     {
-      "icon": IconConstants.packageBox,
-      "heading": "Package",
-      "date": "Jan 12 at 9:00 PM",
-      "to": "Tech Store Plaza",
-      "from": "Perinthalmanna",
-      "person": "Sarah Chen",
-      "car_type": "",
+      "type": "D2D",
+      "from": "Warehouse 12A",
+      "to": "Shopping District",
+      "dateTime": "18 Jul 2026, 9:00 AM",
+      "parcel": "Grocery",
+      "image": "assets/images/pexels-israr-ahmrd-152664845-10568559.jpg",
+      "payment": "UPI",
+      "price": "₹149",
     },
     {
-      "icon": IconConstants.carKey,
-      "heading": "Rent",
-      "date": "Tomorrow at 10:00 PM",
-      "to": "Tech Store Plaza",
-      "from": "Perinthalmanna",
-      "person": "Sarah Chen",
-      "car_type": "Honda Civic",
+      "type": "Cab",
+      "from": "Airport T2",
+      "to": "City Center Mall",
+      "dateTime": "21 Jul 2026, 5:30 PM",
+      "driver": "Rahul Dev",
+      "car": "Toyota Etios",
+      "plate": "KL 15 AB 4321",
+      "seats": "4 seats",
+      "payment": "Card",
+      "fare": "₹820",
+      "image": "assets/images/rentalcar2.jpg",
     },
   ];
+
   List rentalCarImage = [
     ImageConstant.carHDRent1,
     ImageConstant.carHDRent2,
@@ -58,12 +68,9 @@ class _HomePageState extends State<HomePage> {
   ];
   TextEditingController searchController = TextEditingController();
 
-
   @override
   Widget build(BuildContext context) {
-    double width = MediaQuery.of(context).size.width;
-    double columnWidth = (width - 36) / 2; // padding + spacing adjustments
-    double columnHeight = 250; // you can adjust
+
     return Scaffold(
       backgroundColor: ColorConstant.bgColor,
       body: SingleChildScrollView(
@@ -144,7 +151,7 @@ class _HomePageState extends State<HomePage> {
                               SvgPicture.asset(
                                 "assets/icons/notification-10.svg",
                                 color:
-                                ColorConstant.thirdColor.withOpacity(0.7),
+                                    ColorConstant.thirdColor.withOpacity(0.7),
                                 height: width * 0.075,
                               ),
                               Positioned(
@@ -188,7 +195,7 @@ class _HomePageState extends State<HomePage> {
                 width: width,
                 child: Padding(
                   padding:
-                  EdgeInsets.only(right: width * 0.03, left: width * 0.03),
+                      EdgeInsets.only(right: width * 0.03, left: width * 0.03),
                   child: Row(
                     children: [
                       Expanded(
@@ -205,43 +212,26 @@ class _HomePageState extends State<HomePage> {
                             fillColor: ColorConstant.bgColor,
                             prefixIcon: Icon(CupertinoIcons.search),
                             prefixIconColor:
-                            ColorConstant.thirdColor.withOpacity(0.4),
+                                ColorConstant.thirdColor.withOpacity(0.4),
                             hintText: "Search here!",
                             hintStyle: TextStyle(
                                 color:
-                                ColorConstant.thirdColor.withOpacity(0.4),
+                                    ColorConstant.thirdColor.withOpacity(0.4),
                                 fontSize: width * 0.03),
                             contentPadding:
-                            EdgeInsets.symmetric(vertical: width * 0.01),
-                            // border: OutlineInputBorder(
-                            //   borderSide: BorderSide(
-                            //       color: ColorConstant.color11.withOpacity(0.4),
-                            //       width: width * 0.002),
-                            //   borderRadius: BorderRadius.circular(width * 0.06),
-                            // ),
-                            // enabledBorder: OutlineInputBorder(
-                            //   borderSide: BorderSide(
-                            //       color: ColorConstant.color11.withOpacity(0.4),
-                            //       width: width * 0.002),
-                            //   borderRadius: BorderRadius.circular(width * 0.06),
-                            // ),
-                            // focusedBorder: OutlineInputBorder(
-                            //   borderSide: BorderSide(
-                            //       color: ColorConstant.color11.withOpacity(0.4),
-                            //       width: width * 0.002),
-                            //   borderRadius: BorderRadius.circular(width * 0.06),
-                            // ),
+                                EdgeInsets.symmetric(vertical: width * 0.01),
+
                             border: OutlineInputBorder(
                               borderSide: BorderSide.none,
-                              borderRadius: BorderRadius.circular(30),
+                              borderRadius: BorderRadius.circular(width*0.03),
                             ),
                             enabledBorder: OutlineInputBorder(
                               borderSide: BorderSide.none,
-                              borderRadius: BorderRadius.circular(30),
+                              borderRadius: BorderRadius.circular(width*0.03),
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderSide: BorderSide.none,
-                              borderRadius: BorderRadius.circular(30),
+                              borderRadius: BorderRadius.circular(width*0.03),
                             ),
                           ),
                         ),
@@ -256,10 +246,10 @@ class _HomePageState extends State<HomePage> {
                             shape: BoxShape.circle),
                         child: Center(
                             child: Icon(
-                              Icons.favorite_border,
-                              color: ColorConstant.thirdColor.withOpacity(0.6),
-                              size: width * 0.052,
-                            )),
+                          Icons.favorite_border,
+                          color: ColorConstant.thirdColor.withOpacity(0.6),
+                          size: width * 0.052,
+                        )),
                       ),
                     ],
                   ),
@@ -332,9 +322,9 @@ class _HomePageState extends State<HomePage> {
                                         ),
                                         Column(
                                           mainAxisAlignment:
-                                          MainAxisAlignment.spaceEvenly,
+                                              MainAxisAlignment.spaceEvenly,
                                           crossAxisAlignment:
-                                          CrossAxisAlignment.start,
+                                              CrossAxisAlignment.start,
                                           children: [
                                             Text(
                                               "20 % off",
@@ -344,7 +334,7 @@ class _HomePageState extends State<HomePage> {
                                                   fontWeight: FontWeight.w700,
                                                   fontSize: width * 0.05,
                                                   decorationColor:
-                                                  ColorConstant.color11),
+                                                      ColorConstant.color11),
                                             ),
                                             Text(
                                               "on your first booking!",
@@ -364,7 +354,7 @@ class _HomePageState extends State<HomePage> {
                                                   fontWeight: FontWeight.w700,
                                                   fontSize: width * 0.035,
                                                   decoration:
-                                                  TextDecoration.underline,
+                                                      TextDecoration.underline,
                                                   decorationColor: ColorConstant
                                                       .bgColor
                                                       .withOpacity(0.5)),
@@ -403,7 +393,7 @@ class _HomePageState extends State<HomePage> {
               ),
               Padding(
                 padding:
-                EdgeInsets.only(left: width * 0.03, right: width * 0.03),
+                    EdgeInsets.only(left: width * 0.03, right: width * 0.03),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -417,212 +407,6 @@ class _HomePageState extends State<HomePage> {
                   ],
                 ),
               ),
-              // Padding(
-              //   padding: EdgeInsets.only(
-              //       left: width * 0.03,
-              //       top: width * 0.03,
-              //       bottom: width * 0.02),
-              //   child: Row(
-              //     children: [
-              //       Container(
-              //         height: width * 0.22,
-              //         width: width * 0.22,
-              //         margin: EdgeInsets.only(right: width * 0.02),
-              //         decoration: BoxDecoration(
-              //             color: ColorConstant.bgColor,
-              //             borderRadius: BorderRadius.all(
-              //               Radius.circular(width * 0.04),
-              //             )),
-              //         child: Stack(
-              //           children: [
-              //             Padding(
-              //               padding: EdgeInsets.all(width * 0.02),
-              //               child: Column(
-              //                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              //                 crossAxisAlignment: CrossAxisAlignment.start,
-              //                 children: [
-              //                   Icon(
-              //                     Icons.car_rental,
-              //                     color: ColorConstant.color11.withOpacity(0.7),
-              //                     size: width * 0.07,
-              //                   ),
-              //                   SizedBox(
-              //                     height: width * 0.03,
-              //                   ),
-              //                   Text(
-              //                     "Rent Vehicle",
-              //                     style: TextStyle(
-              //                       color:
-              //                           ColorConstant.color11.withOpacity(0.7),
-              //                       fontWeight: FontWeight.w600,
-              //                       fontSize:
-              //                           width * 0.032, // reduced font size
-              //                     ),
-              //                   ),
-              //                 ],
-              //               ),
-              //             ),
-              //             Positioned(
-              //                 top: width * 0.002,
-              //                 left: width * 0.1,
-              //                 child: SvgPicture.asset(
-              //                   "assets/icons/rent-a-car.svg",
-              //                   color: ColorConstant.color11.withOpacity(0.2),
-              //                   height: width * 0.12,
-              //                 )),
-              //           ],
-              //         ),
-              //       ),
-              //       Container(
-              //         height: width * 0.22,
-              //         width: width * 0.22,
-              //         margin: EdgeInsets.only(right: width * 0.02),
-              //         decoration: BoxDecoration(
-              //             color: ColorConstant.bgColor,
-              //             borderRadius: BorderRadius.all(
-              //               Radius.circular(width * 0.04),
-              //             )),
-              //         child: Stack(
-              //           children: [
-              //             Padding(
-              //               padding: EdgeInsets.all(width * 0.02),
-              //               child: Column(
-              //                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              //                 crossAxisAlignment: CrossAxisAlignment.start,
-              //                 children: [
-              //                   Icon(
-              //                     CupertinoIcons.cube_box_fill,
-              //                     color: ColorConstant.color11.withOpacity(0.7),
-              //                     size: width * 0.07,
-              //                   ),
-              //                   SizedBox(
-              //                     height: width * 0.03,
-              //                   ),
-              //                   Text(
-              //                     "D2D Service",
-              //                     style: TextStyle(
-              //                       color:
-              //                           ColorConstant.color11.withOpacity(0.7),
-              //                       fontWeight: FontWeight.w600,
-              //                       fontSize:
-              //                           width * 0.032, // reduced font size
-              //                     ),
-              //                   ),
-              //                 ],
-              //               ),
-              //             ),
-              //             Positioned(
-              //                 top: width * 0.01,
-              //                 left: width * 0.13,
-              //                 child: SvgPicture.asset(
-              //                   "assets/icons/box.svg",
-              //                   color: ColorConstant.color11.withOpacity(0.2),
-              //                   height: width * 0.1,
-              //                 )),
-              //           ],
-              //         ),
-              //       ),
-              //       Container(
-              //         height: width * 0.22,
-              //         width: width * 0.22,
-              //         margin: EdgeInsets.only(right: width * 0.02),
-              //         decoration: BoxDecoration(
-              //             color: ColorConstant.bgColor,
-              //             borderRadius: BorderRadius.all(
-              //               Radius.circular(width * 0.04),
-              //             )),
-              //         child: Stack(
-              //           children: [
-              //             Padding(
-              //               padding: EdgeInsets.all(width * 0.02),
-              //               child: Column(
-              //                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              //                 crossAxisAlignment: CrossAxisAlignment.start,
-              //                 children: [
-              //                   Icon(
-              //                     Icons.person,
-              //                     color: ColorConstant.color11.withOpacity(0.7),
-              //                     size: width * 0.07,
-              //                   ),
-              //                   SizedBox(
-              //                     height: width * 0.03,
-              //                   ),
-              //                   Text(
-              //                     "Find Driver",
-              //                     style: TextStyle(
-              //                       color:
-              //                           ColorConstant.color11.withOpacity(0.7),
-              //                       fontWeight: FontWeight.w600,
-              //                       fontSize:
-              //                           width * 0.032, // reduced font size
-              //                     ),
-              //                   ),
-              //                 ],
-              //               ),
-              //             ),
-              //             Positioned(
-              //                 top: width * 0.002,
-              //                 left: width * 0.13,
-              //                 child: SvgPicture.asset(
-              //                   "assets/icons/driver (1).svg",
-              //                   color: ColorConstant.color11.withOpacity(0.2),
-              //                   height: width * 0.12,
-              //                 )),
-              //           ],
-              //         ),
-              //       ),
-              //       Container(
-              //         height: width * 0.22,
-              //         width: width * 0.22,
-              //         margin: EdgeInsets.only(right: width * 0.02),
-              //         decoration: BoxDecoration(
-              //             color: ColorConstant.bgColor,
-              //             borderRadius: BorderRadius.all(
-              //               Radius.circular(width * 0.04),
-              //             )),
-              //         child: Stack(
-              //           children: [
-              //             Padding(
-              //               padding: EdgeInsets.all(width * 0.02),
-              //               child: Column(
-              //                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              //                 crossAxisAlignment: CrossAxisAlignment.start,
-              //                 children: [
-              //                   Icon(
-              //                     CupertinoIcons.car_detailed,
-              //                     color: ColorConstant.color11.withOpacity(0.7),
-              //                     size: width * 0.07,
-              //                   ),
-              //                   SizedBox(
-              //                     height: width * 0.03,
-              //                   ),
-              //                   Text(
-              //                     "Find Driver",
-              //                     style: TextStyle(
-              //                       color:
-              //                           ColorConstant.color11.withOpacity(0.7),
-              //                       fontWeight: FontWeight.w600,
-              //                       fontSize:
-              //                           width * 0.032, // reduced font size
-              //                     ),
-              //                   ),
-              //                 ],
-              //               ),
-              //             ),
-              //             Positioned(
-              //                 top: width * 0.01,
-              //                 left: width * 0.1,
-              //                 child: SvgPicture.asset(
-              //                   "assets/icons/cab.svg",
-              //                   color: ColorConstant.color11.withOpacity(0.2),
-              //                   height: width * 0.12,
-              //                 )),
-              //           ],
-              //         ),
-              //       ),
-              //     ],
-              //   ),
-              // ),
               Padding(
                 padding: EdgeInsets.only(
                     left: width * 0.03,
@@ -631,37 +415,42 @@ class _HomePageState extends State<HomePage> {
                     right: width * 0.01),
                 child: Row(
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          height: width * 0.16,
-                          width: width * 0.16,
-                          margin: EdgeInsets.only(
-                              right: width * 0.02, bottom: width * 0.01),
-                          decoration: BoxDecoration(
-                            color: Colors.blue.withOpacity(0.2),
-                            borderRadius: BorderRadius.all(
-                              Radius.circular(width * 0.03),
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.push(context, MaterialPageRoute(builder: (context) => CabPage(),));
+                      },
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            height: width * 0.16,
+                            width: width * 0.16,
+                            margin: EdgeInsets.only(
+                                right: width * 0.02, bottom: width * 0.01),
+                            decoration: BoxDecoration(
+                              color: Colors.blue.withOpacity(0.2),
+                              borderRadius: BorderRadius.all(
+                                Radius.circular(width * 0.03),
+                              ),
+                            ),
+                            child: Center(
+                              child: SvgPicture.asset(
+                                "assets/icons/oncoming-automobile.svg",
+                                height: width * 0.13,
+                              ),
                             ),
                           ),
-                          child: Center(
-                            child: SvgPicture.asset(
-                              "assets/icons/oncoming-automobile.svg",
-                              height: width * 0.13,
+                          Text(
+                            "Find Cab",
+                            style: TextStyle(
+                              color: ColorConstant.thirdColor.withOpacity(0.7),
+                              fontWeight: FontWeight.w600,
+                              fontSize: width * 0.032, // reduced font size
                             ),
                           ),
-                        ),
-                        Text(
-                          "Find Cab",
-                          style: TextStyle(
-                            color: ColorConstant.thirdColor.withOpacity(0.7),
-                            fontWeight: FontWeight.w600,
-                            fontSize: width * 0.032, // reduced font size
-                          ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                     Spacer(),
                     Column(
@@ -796,7 +585,7 @@ class _HomePageState extends State<HomePage> {
                             "View all",
                             style: TextStyle(
                                 color:
-                                ColorConstant.thirdColor.withOpacity(0.4),
+                                    ColorConstant.thirdColor.withOpacity(0.4),
                                 fontWeight: FontWeight.w500,
                                 fontSize: width * 0.03),
                           ),
@@ -835,7 +624,7 @@ class _HomePageState extends State<HomePage> {
                         //     color: ColorConstant.textColor2,
                         //     width: width * 0.002),
                         borderRadius:
-                        BorderRadius.all(Radius.circular(width * 0.03)),
+                            BorderRadius.all(Radius.circular(width * 0.03)),
                         boxShadow: [
                           BoxShadow(
                             color: Colors.black.withOpacity(0.1), // soft shadow
@@ -900,19 +689,19 @@ class _HomePageState extends State<HomePage> {
                                 ),
                                 Divider(
                                   color:
-                                  ColorConstant.thirdColor.withOpacity(0.2),
+                                      ColorConstant.thirdColor.withOpacity(0.2),
                                 ),
                                 IntrinsicHeight(
                                   // makes children take equal height
                                   child: Row(
                                     crossAxisAlignment:
-                                    CrossAxisAlignment.stretch,
+                                        CrossAxisAlignment.stretch,
                                     children: [
                                       Column(
                                         crossAxisAlignment:
-                                        CrossAxisAlignment.start,
+                                            CrossAxisAlignment.start,
                                         mainAxisAlignment:
-                                        MainAxisAlignment.start,
+                                            MainAxisAlignment.start,
                                         children: [
                                           Row(
                                             children: [
@@ -925,7 +714,7 @@ class _HomePageState extends State<HomePage> {
                                                 "40.00 ",
                                                 style: TextStyle(
                                                   color:
-                                                  ColorConstant.thirdColor,
+                                                      ColorConstant.thirdColor,
                                                   fontWeight: FontWeight.w700,
                                                   fontSize: width * 0.032,
                                                 ),
@@ -937,7 +726,7 @@ class _HomePageState extends State<HomePage> {
                                               Row(
                                                 children: List.generate(
                                                   4,
-                                                      (index) => Icon(
+                                                  (index) => Icon(
                                                     Icons.star,
                                                     color: Colors.amber,
                                                     size: width * 0.045,
@@ -1056,7 +845,7 @@ class _HomePageState extends State<HomePage> {
                             "View all",
                             style: TextStyle(
                                 color:
-                                ColorConstant.thirdColor.withOpacity(0.4),
+                                    ColorConstant.thirdColor.withOpacity(0.4),
                                 fontWeight: FontWeight.w500,
                                 fontSize: width * 0.03),
                           ),
@@ -1093,7 +882,7 @@ class _HomePageState extends State<HomePage> {
                       decoration: BoxDecoration(
                         color: ColorConstant.bgColor,
                         border: Border.all(
-                            color: ColorConstant.thirdColor.withOpacity(0.1),
+                            color: Colors.grey.withOpacity(0.2),
                             width: width * 0.002),
                         // boxShadow: [
                         //   BoxShadow(
@@ -1103,7 +892,7 @@ class _HomePageState extends State<HomePage> {
                         //   ),
                         // ],
                         borderRadius:
-                        BorderRadius.all(Radius.circular(width * 0.02)),
+                            BorderRadius.all(Radius.circular(width * 0.03)),
                       ),
                       child: Padding(
                         padding: EdgeInsets.all(width * 0.02),
@@ -1116,7 +905,7 @@ class _HomePageState extends State<HomePage> {
                               decoration: BoxDecoration(
                                   color: ColorConstant.thirdColor,
                                   borderRadius: BorderRadius.all(
-                                      Radius.circular(width * 0.02)),
+                                      Radius.circular(width * 0.03)),
                                   image: DecorationImage(
                                       image: AssetImage(rentalCarImage[index]),
                                       fit: BoxFit.cover)),
@@ -1200,7 +989,7 @@ class _HomePageState extends State<HomePage> {
                                   // makes children take equal height
                                   child: Row(
                                     crossAxisAlignment:
-                                    CrossAxisAlignment.stretch,
+                                        CrossAxisAlignment.stretch,
                                     children: [
                                       SizedBox(
                                         width: width * 0.02,
@@ -1216,11 +1005,14 @@ class _HomePageState extends State<HomePage> {
                                           favorite
                                               ? Icons.favorite
                                               : Icons.favorite_border,
-                                          color:
-                                          favorite ? Colors.red : ColorConstant.thirdColor.withOpacity(0.1),
+                                          color: favorite
+                                              ? Colors.red
+                                              : ColorConstant.thirdColor
+                                                  .withOpacity(0.1),
                                           size: width * 0.05,
                                         ),
-                                      ),SizedBox(
+                                      ),
+                                      SizedBox(
                                         width: width * 0.04,
                                       ),
                                       // vertical divider
@@ -1241,7 +1033,6 @@ class _HomePageState extends State<HomePage> {
                                     ],
                                   ),
                                 )
-
                               ],
                             ),
                           ],
@@ -1281,7 +1072,7 @@ class _HomePageState extends State<HomePage> {
                             "View History",
                             style: TextStyle(
                                 color:
-                                ColorConstant.thirdColor.withOpacity(0.4),
+                                    ColorConstant.thirdColor.withOpacity(0.4),
                                 fontWeight: FontWeight.w500,
                                 fontSize: width * 0.03),
                           ),
@@ -1300,283 +1091,770 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
 
-              Padding(
-                padding: EdgeInsets.only(left: width * 0.03),
-                child: SizedBox(
-                  height: width * 0.66,
+              SizedBox(
+                  height: width * 0.55,
                   width: width,
                   child: ListView.builder(
                     shrinkWrap: true,
-                    physics: AlwaysScrollableScrollPhysics(),
+                    physics: const AlwaysScrollableScrollPhysics(),
                     itemCount: upComings.length,
                     scrollDirection: Axis.horizontal,
                     itemBuilder: (context, index) {
-                      return Container(
-                        margin: EdgeInsets.only(
-                            right: width * 0.03,
-                            top: width * 0.03,
-                            bottom: width * 0.03),
-                        height: width * 0.45,
-                        width: width * 0.65,
-                        decoration: BoxDecoration(
+                      final item = upComings[index];
+                      final String type = (item["type"] ?? "Driver") as String;
+
+                      return GestureDetector(
+                        onTap: () {
+                          Navigator.push(context, MaterialPageRoute(builder: (context) => DetailsPageOfHistory(),));
+                        },
+                        child: Container(
+                          margin: EdgeInsets.only(
+                              right: width * 0.03,
+                              left: width*0.03,
+                              top: width * 0.03,
+                              bottom: width * 0.03),
+                          height: width * 0.45,
+                          width: width * 0.65,
+                          decoration: BoxDecoration(
                             color: ColorConstant.bgColor,
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black
-                                    .withOpacity(0.1), // soft shadow
-                                blurRadius: 3,
-                                spreadRadius: 2, // how soft the shadow is
-                                offset: Offset(0, 3), // X, Y position of shadow
+                                color: Colors.black.withOpacity(0.15),
+                                blurRadius: 6,
+                                offset: const Offset(0, 3),
                               ),
                             ],
-                            // border: Border.all(
-                            //     color: ColorConstant.textColor2
-                            //         .withOpacity(0.4),
-                            //     width: width * 0.002),
-                            borderRadius: BorderRadius.all(
-                                Radius.circular(width * 0.02))),
-                        child: Padding(
-                          padding: EdgeInsets.all(width * 0.02),
-                          child: Column(
-                            children: [
-                              Row(
-                                children: [
-                                  Container(
-                                    height: width * 0.17,
-                                    width: width * 0.17,
-                                    decoration: BoxDecoration(
-                                        color: ColorConstant.color11,
-                                        // shape: BoxShape.circle,
-                                        borderRadius: BorderRadius.all(
-                                            Radius.circular(width * 0.03)),
-                                        image: DecorationImage(
-                                            image: AssetImage(
-                                                "assets/images/city-map-any-kind-digital-260nw-1966430326.webp"),
-                                            fit: BoxFit.cover)),
-                                  ),
-                                  SizedBox(width: width * 0.02),
-                                  Column(
-                                    mainAxisSize: MainAxisSize.min,
+                            borderRadius:
+                                BorderRadius.all(Radius.circular(width * 0.03)),
+                          ),
+                          child: Padding(
+                            padding: EdgeInsets.all(width * 0.02),
+                            // ===================== INLINE SWITCH =====================
+                              child: (type == "D2D")
+                                // -------- D2D CONTAINER (parcel) --------
+                                ? Column(
                                     children: [
-                                      SvgPicture.asset(
-                                        IconConstants.sendPlane,
-                                        color: ColorConstant.thirdColor
-                                            .withOpacity(0.5),
-                                        height: width * 0.038,
+                                      Row(
+                                        children: [
+                                          Spacer(),
+                                          Container(
+                                            height: width * 0.06,
+                                            width: width * 0.2,
+                                            decoration: BoxDecoration(
+                                                color: Colors.yellow
+                                                    .withOpacity(0.4),
+                                                borderRadius: BorderRadius.all(
+                                                    Radius.circular(
+                                                        width * 0.03))),
+                                            child: Center(
+                                              child: Text(
+                                                item["type"],
+                                                style: TextStyle(
+                                                    color:
+                                                        ColorConstant.thirdColor,
+                                                    fontSize: width * 0.03,
+                                                    fontWeight: FontWeight.bold),
+                                              ),
+                                            ),
+                                          )
+                                        ],
                                       ),
-                                      Container(
-                                        width: width * 0.003,
-                                        height: width * 0.06,
-                                        color: ColorConstant.thirdColor
-                                            .withOpacity(0.2),
+                                      Row(
+                                        children: [
+                                          Text(
+                                            "16 Jul 2026 - 3:45 PM",
+                                            style: TextStyle(
+                                                color: ColorConstant.thirdColor,
+                                                fontSize: width * 0.03),
+                                          ),
+                                          Spacer(),
+                                          Icon(
+                                            Icons.arrow_forward_ios,
+                                            color: ColorConstant.thirdColor
+                                                .withOpacity(0.3),
+                                            size: width * 0.035,
+                                          )
+                                        ],
                                       ),
-                                      SvgPicture.asset(
-                                        "assets/icons/location-pin (1).svg",
-                                        color: ColorConstant.thirdColor
-                                            .withOpacity(0.5),
-                                        height: width * 0.04,
+                                      SizedBox(height: width * 0.03),
+                                      Row(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          // LEFT: avatar
+                                          ClipRRect(
+                                            borderRadius: BorderRadius.circular(
+                                                width * 0.03),
+                                            child: Image.asset(
+                                              item["image"] ?? "",
+                                              width: width * 0.20,
+                                              height: width * 0.20,
+                                              fit: BoxFit.cover,
+                                            ),
+                                          ),
+
+                                          SizedBox(width: width * 0.02),
+
+                                          // RIGHT: name + from/to
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                // name (standalone)
+                                                Text(
+                                                  item["parcel"] ?? "-",
+                                                  maxLines: 1,
+                                                  overflow: TextOverflow.ellipsis,
+                                                  style: TextStyle(
+                                                    color:
+                                                        ColorConstant.thirdColor,
+                                                    fontSize: width * 0.038,
+                                                    fontWeight: FontWeight.w600,
+                                                  ),
+                                                ),
+
+                                                SizedBox(height: width * 0.016),
+
+                                                // from/to row: connector + addresses
+                                                Row(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: [
+                                                    // connector column
+                                                    SizedBox(
+                                                      height: width *
+                                                          0.11, // shorter than avatar so name fits above
+                                                      child: Column(
+                                                        mainAxisAlignment:
+                                                            MainAxisAlignment
+                                                                .spaceBetween,
+                                                        children: [
+                                                          Icon(
+                                                              Icons
+                                                                  .my_location_outlined,
+                                                              size: width * 0.038,
+                                                              color: Colors.red),
+                                                          Container(
+                                                            width: width * 0.003,
+                                                            height: width * 0.025,
+                                                            color: ColorConstant
+                                                                .thirdColor
+                                                                .withOpacity(0.2),
+                                                          ),
+                                                          Icon(
+                                                              CupertinoIcons
+                                                                  .location_north_line,
+                                                              size: width * 0.045,
+                                                              color:
+                                                                  Colors.green),
+                                                        ],
+                                                      ),
+                                                    ),
+
+                                                    SizedBox(width: width * 0.02),
+
+                                                    // from/to column (no name here)
+                                                    Expanded(
+                                                      child: Column(
+                                                        crossAxisAlignment:
+                                                            CrossAxisAlignment
+                                                                .start,
+                                                        children: [
+                                                          Text(
+                                                            item["from"] ?? "-",
+                                                            maxLines: 1,
+                                                            overflow: TextOverflow
+                                                                .ellipsis,
+                                                            style: TextStyle(
+                                                              color: ColorConstant
+                                                                  .thirdColor,
+                                                              fontSize:
+                                                                  width * 0.03,
+                                                            ),
+                                                          ),
+                                                          SizedBox(
+                                                            height: width * 0.03,
+                                                          ),
+                                                          Text(
+                                                            item["to"] ?? "-",
+                                                            maxLines: 1,
+                                                            overflow: TextOverflow
+                                                                .ellipsis,
+                                                            style: TextStyle(
+                                                              color: ColorConstant
+                                                                  .thirdColor,
+                                                              fontSize:
+                                                                  width * 0.03,
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      SizedBox(height: width * 0.03),
+                                      Row(
+                                        children: [
+                                          GestureDetector(
+                                            onTap: () {
+                                              showCancelDialog(context);                                          },
+                                            child: Container(
+                                              height: width * 0.08,
+                                              width: width * 0.291,
+                                              decoration: BoxDecoration(
+                                                color: ColorConstant.color11
+                                                    .withOpacity(0.1),
+                                                // border: Border.all(
+                                                //     color: ColorConstant.color11
+                                                //         .withOpacity(0.8)),
+                                                borderRadius: BorderRadius.all(
+                                                    Radius.circular(width * 0.03)),
+                                              ),
+                                              alignment: Alignment.center,
+                                              child: Text("Cancel",
+                                                  style: TextStyle(
+                                                      color: ColorConstant.color11,
+                                                      fontSize: width * 0.033,
+                                                      fontWeight: FontWeight.w700)),
+                                            ),
+                                          ),
+                                          const Spacer(),
+                                          GestureDetector(
+                                            onTap: () {
+                                              Navigator.push(context, MaterialPageRoute(builder: (context) => ReschedulePage(),));
+                                            },
+                                            child: Container(
+                                              height: width * 0.08,
+                                              width: width * 0.29,
+                                              decoration: BoxDecoration(
+                                                color: ColorConstant.color11
+                                                    .withOpacity(0.9),
+                                                borderRadius: BorderRadius.all(
+                                                    Radius.circular(width * 0.03)),
+                                              ),
+                                              alignment: Alignment.center,
+                                              child: Text("Reschedule",
+                                                  style: TextStyle(
+                                                      color: ColorConstant.bgColor,
+                                                      fontSize: width * 0.033,
+                                                      fontWeight: FontWeight.w700)),
+                                            ),
+                                          ),
+                                        ],
                                       ),
                                     ],
-                                  ),
-                                  SizedBox(width: width * 0.01),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                      CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          "190 Blacker Ctr.beach",
-                                          style: TextStyle(
-                                              color: ColorConstant.thirdColor
-                                                  .withOpacity(0.5),
-                                              fontSize: width * 0.03),
-                                        ),
-                                        SizedBox(height: width * 0.01),
-                                        Divider(
-                                            color: ColorConstant.thirdColor
-                                                .withOpacity(0.2)),
-                                        SizedBox(height: width * 0.01),
-                                        Text(
-                                          "402 Banglour road ",
-                                          style: TextStyle(
-                                              color: ColorConstant.thirdColor
-                                                  .withOpacity(0.5),
-                                              fontSize: width * 0.03),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              SizedBox(height: width * 0.02),
-                              Expanded(
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                      color: ColorConstant.textColor2
-                                          .withOpacity(0.25),
-                                      borderRadius: BorderRadius.all(
-                                          Radius.circular(width * 0.03))),
-                                  child: Padding(
-                                    padding: EdgeInsets.all(width * 0.02),
-                                    child: Column(
-                                      children: [
-                                        Row(
-                                          children: [
-                                            Text(
-                                              "Date and Time",
-                                              style: TextStyle(
-                                                  color: ColorConstant
-                                                      .thirdColor
-                                                      .withOpacity(0.3),
-                                                  fontSize: width * 0.03),
-                                            ),
-                                            Spacer(),
-                                            Text(
-                                              "16 July 2026",
-                                              style: TextStyle(
-                                                  color: ColorConstant
-                                                      .thirdColor
-                                                      .withOpacity(0.6),
-                                                  fontSize: width * 0.03),
-                                            ),
-                                          ],
-                                        ),
-                                        SizedBox(height: width * 0.02),
+                                  )
+                                // -------- CAB CONTAINER --------item["image"] ??
+                                //                                                     "assets/images/profile_pic.jpg"
+                                : (type == "Cab")
+                                    ? Column(
+                                        children: [
+                                          Row(
+                                            children: [
+                                              Spacer(),
+                                              Container(
+                                                height: width * 0.06,
+                                                width: width * 0.2,
+                                                decoration: BoxDecoration(
+                                                    color: Colors.yellow
+                                                        .withOpacity(0.4),
+                                                    borderRadius:
+                                                        BorderRadius.all(
+                                                            Radius.circular(
+                                                                width * 0.03))),
+                                                child: Center(
+                                                  child: Text(
+                                                    item["type"],
+                                                    style: TextStyle(
+                                                        color: ColorConstant
+                                                            .thirdColor,
+                                                        fontSize: width * 0.03,
+                                                        fontWeight:
+                                                            FontWeight.bold),
+                                                  ),
+                                                ),
+                                              )
+                                            ],
+                                          ),
+                                          Row(
+                                            children: [
+                                              Text(
+                                                "16 Jul 2026 - 3:45 PM",
+                                                style: TextStyle(
+                                                    color:
+                                                        ColorConstant.thirdColor,
+                                                    fontSize: width * 0.03),
+                                              ),
+                                              Spacer(),
+                                              Icon(
+                                                Icons.arrow_forward_ios,
+                                                color: ColorConstant.thirdColor
+                                                    .withOpacity(0.3),
+                                                size: width * 0.035,
+                                              )
+                                            ],
+                                          ),
+                                          SizedBox(height: width * 0.03),
+                                          Row(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              // LEFT: avatar
+                                              ClipRRect(
+                                                borderRadius:
+                                                    BorderRadius.circular(
+                                                        width * 0.03),
+                                                child: Image.asset(
+                                                  item["image"] ??
+                                                      "assets/images/rentalcar2.jpg",
+                                                  width: width * 0.20,
+                                                  height: width * 0.20,
+                                                  fit: BoxFit.cover,
+                                                ),
+                                              ),
 
-                                        // Divider(
-                                        //     color: ColorConstant.thirdColor
-                                        //         .withOpacity(0.1)),
-                                        Row(
-                                          children: [
-                                            Text(
-                                              "Driver Name",
-                                              style: TextStyle(
-                                                  color: ColorConstant
-                                                      .thirdColor
-                                                      .withOpacity(0.3),
-                                                  fontSize: width * 0.03),
-                                            ),
-                                            Spacer(),
-                                            Text(
-                                              "Budi Susanto",
-                                              style: TextStyle(
-                                                  color: ColorConstant
-                                                      .thirdColor
-                                                      .withOpacity(0.6),
-                                                  fontSize: width * 0.03),
-                                            ),
-                                          ],
-                                        ),
-                                        SizedBox(height: width * 0.02),
-                                        // Divider(
-                                        //     color: ColorConstant.thirdColor
-                                        //         .withOpacity(0.1)),
-                                        Row(
-                                          children: [
-                                            Text(
-                                              "Payment type",
-                                              style: TextStyle(
-                                                  color: ColorConstant
-                                                      .thirdColor
-                                                      .withOpacity(0.3),
-                                                  fontSize: width * 0.03),
-                                            ),
-                                            Spacer(),
-                                            Text(
-                                              "Cash",
-                                              style: TextStyle(
-                                                  color: ColorConstant
-                                                      .thirdColor
-                                                      .withOpacity(0.6),
-                                                  fontSize: width * 0.03),
-                                            ),
-                                          ],
-                                        ),
-                                        // Divider(
-                                        //     color: ColorConstant.thirdColor
-                                        //         .withOpacity(0.1)),
-                                        SizedBox(height: width * 0.02),
-                                        Row(
-                                          children: [
-                                            Text(
-                                              "Category",
-                                              style: TextStyle(
-                                                  color: ColorConstant
-                                                      .thirdColor
-                                                      .withOpacity(0.3),
-                                                  fontSize: width * 0.03),
-                                            ),
-                                            Spacer(),
-                                            Text(
-                                              "Driver only",
-                                              style: TextStyle(
-                                                  color: ColorConstant
-                                                      .thirdColor
-                                                      .withOpacity(0.6),
-                                                  fontSize: width * 0.03),
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              SizedBox(height: width * 0.02),
-                              Row(
-                                children: [
-                                  Container(
-                                    height: width * 0.07,
-                                    width: width * 0.22,
-                                    decoration: BoxDecoration(
-                                        color: ColorConstant.bgColor,
-                                        border: Border.all(
-                                            color: ColorConstant.color11
-                                                .withOpacity(0.7)),
-                                        borderRadius: BorderRadius.all(
-                                            Radius.circular(width * 0.03))),
-                                    child: Center(
-                                      child: Text(
-                                        "Cancel",
-                                        style: TextStyle(
-                                          color: ColorConstant.color11
-                                              .withOpacity(0.7),
-                                          fontSize: width * 0.033,
-                                          fontWeight: FontWeight.w700,
-                                        ),
+                                              SizedBox(width: width * 0.02),
+
+                                              // RIGHT: name + from/to
+                                              Expanded(
+                                                child: Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: [
+                                                    // name (standalone)
+                                                    Text(
+                                                      item["car"] ?? "-",
+                                                      maxLines: 1,
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                      style: TextStyle(
+                                                        color: ColorConstant
+                                                            .thirdColor,
+                                                        fontSize: width * 0.038,
+                                                        fontWeight:
+                                                            FontWeight.w600,
+                                                      ),
+                                                    ),
+
+                                                    SizedBox(
+                                                        height: width * 0.016),
+
+                                                    // from/to row: connector + addresses
+                                                    Row(
+                                                      crossAxisAlignment:
+                                                          CrossAxisAlignment
+                                                              .start,
+                                                      children: [
+                                                        // connector column
+                                                        SizedBox(
+                                                          height: width *
+                                                              0.11, // shorter than avatar so name fits above
+                                                          child: Column(
+                                                            mainAxisAlignment:
+                                                                MainAxisAlignment
+                                                                    .spaceBetween,
+                                                            children: [
+                                                              Icon(
+                                                                  Icons
+                                                                      .my_location_outlined,
+                                                                  size: width *
+                                                                      0.038,
+                                                                  color:
+                                                                      Colors.red),
+                                                              Container(
+                                                                width:
+                                                                    width * 0.003,
+                                                                height:
+                                                                    width * 0.025,
+                                                                color: ColorConstant
+                                                                    .thirdColor
+                                                                    .withOpacity(
+                                                                        0.2),
+                                                              ),
+                                                              Icon(
+                                                                  CupertinoIcons
+                                                                      .location_north_line,
+                                                                  size: width *
+                                                                      0.045,
+                                                                  color: Colors
+                                                                      .green),
+                                                            ],
+                                                          ),
+                                                        ),
+
+                                                        SizedBox(
+                                                            width: width * 0.02),
+
+                                                        // from/to column (no name here)
+                                                        Expanded(
+                                                          child: Column(
+                                                            crossAxisAlignment:
+                                                                CrossAxisAlignment
+                                                                    .start,
+                                                            children: [
+                                                              Text(
+                                                                item["from"] ??
+                                                                    "-",
+                                                                maxLines: 1,
+                                                                overflow:
+                                                                    TextOverflow
+                                                                        .ellipsis,
+                                                                style: TextStyle(
+                                                                  color: ColorConstant
+                                                                      .thirdColor,
+                                                                  fontSize:
+                                                                      width *
+                                                                          0.03,
+                                                                ),
+                                                              ),
+                                                              SizedBox(
+                                                                height:
+                                                                    width * 0.03,
+                                                              ),
+                                                              Text(
+                                                                item["to"] ?? "-",
+                                                                maxLines: 1,
+                                                                overflow:
+                                                                    TextOverflow
+                                                                        .ellipsis,
+                                                                style: TextStyle(
+                                                                  color: ColorConstant
+                                                                      .thirdColor,
+                                                                  fontSize:
+                                                                      width *
+                                                                          0.03,
+                                                                ),
+                                                              ),
+                                                            ],
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          SizedBox(height: width * 0.03),
+                                          Row(
+                                            children: [
+                                              GestureDetector(
+                                                onTap: () {
+                                                  showCancelDialog(context);                                              },
+                                                child: Container(
+                                                  height: width * 0.08,
+                                                  width: width * 0.291,
+                                                  decoration: BoxDecoration(
+                                                    color: ColorConstant.color11
+                                                        .withOpacity(0.1),
+                                                    // border: Border.all(
+                                                    //     color: ColorConstant.color11
+                                                    //         .withOpacity(0.8)),
+                                                    borderRadius: BorderRadius.all(
+                                                        Radius.circular(
+                                                            width * 0.03)),
+                                                  ),
+                                                  alignment: Alignment.center,
+                                                  child: Text("Cancel",
+                                                      style: TextStyle(
+                                                          color:
+                                                              ColorConstant.color11,
+                                                          fontSize: width * 0.033,
+                                                          fontWeight:
+                                                              FontWeight.w700)),
+                                                ),
+                                              ),
+                                              const Spacer(),
+                                              GestureDetector(
+                                                onTap: () {
+                                                  Navigator.push(context, MaterialPageRoute(builder: (context) => ReschedulePage(),));
+                                                },
+                                                child: Container(
+                                                  height: width * 0.08,
+                                                  width: width * 0.29,
+                                                  decoration: BoxDecoration(
+                                                    color: ColorConstant.color11
+                                                        .withOpacity(0.9),
+                                                    borderRadius: BorderRadius.all(
+                                                        Radius.circular(
+                                                            width * 0.03)),
+                                                  ),
+                                                  alignment: Alignment.center,
+                                                  child: Text("Reschedule",
+                                                      style: TextStyle(
+                                                          color:
+                                                              ColorConstant.bgColor,
+                                                          fontSize: width * 0.033,
+                                                          fontWeight:
+                                                              FontWeight.w700)),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      )
+                                    // -------- DRIVER CONTAINER (default) --------
+                                    : Column(
+                                        children: [
+                                          Row(
+                                            children: [
+                                              Spacer(),
+                                              Container(
+                                                height: width * 0.06,
+                                                width: width * 0.2,
+                                                decoration: BoxDecoration(
+                                                    color: Colors.yellow
+                                                        .withOpacity(0.4),
+                                                    borderRadius:
+                                                        BorderRadius.all(
+                                                            Radius.circular(
+                                                                width * 0.03))),
+                                                child: Center(
+                                                  child: Text(
+                                                    item["type"],
+                                                    style: TextStyle(
+                                                        color: ColorConstant
+                                                            .thirdColor,
+                                                        fontSize: width * 0.03,
+                                                        fontWeight:
+                                                            FontWeight.bold),
+                                                  ),
+                                                ),
+                                              )
+                                            ],
+                                          ),
+                                          Row(
+                                            children: [
+                                              Text(
+                                                "16 Jul 2026 - 3:45 PM",
+                                                style: TextStyle(
+                                                    color:
+                                                        ColorConstant.thirdColor,
+                                                    fontSize: width * 0.03),
+                                              ),
+                                              Spacer(),
+                                              Icon(
+                                                Icons.arrow_forward_ios,
+                                                color: ColorConstant.thirdColor
+                                                    .withOpacity(0.3),
+                                                size: width * 0.035,
+                                              )
+                                            ],
+                                          ),
+                                          SizedBox(height: width * 0.03),
+                                          Row(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              // LEFT: avatar
+                                              ClipRRect(
+                                                borderRadius:
+                                                    BorderRadius.circular(
+                                                        width * 0.03),
+                                                child: Image.asset(
+                                                  item["image"] ??
+                                                      "assets/images/profile_pic.jpg",
+                                                  width: width * 0.20,
+                                                  height: width * 0.20,
+                                                  fit: BoxFit.cover,
+                                                ),
+                                              ),
+
+                                              SizedBox(width: width * 0.02),
+
+                                              // RIGHT: name + from/to
+                                              Expanded(
+                                                child: Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: [
+                                                    // name (standalone)
+                                                    Text(
+                                                      item["driver"] ?? "-",
+                                                      maxLines: 1,
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                      style: TextStyle(
+                                                        color: ColorConstant
+                                                            .thirdColor,
+                                                        fontSize: width * 0.038,
+                                                        fontWeight:
+                                                            FontWeight.w600,
+                                                      ),
+                                                    ),
+
+                                                    SizedBox(
+                                                        height: width * 0.016),
+
+                                                    // from/to row: connector + addresses
+                                                    Row(
+                                                      crossAxisAlignment:
+                                                          CrossAxisAlignment
+                                                              .start,
+                                                      children: [
+                                                        // connector column
+                                                        SizedBox(
+                                                          height: width *
+                                                              0.11, // shorter than avatar so name fits above
+                                                          child: Column(
+                                                            mainAxisAlignment:
+                                                                MainAxisAlignment
+                                                                    .spaceBetween,
+                                                            children: [
+                                                              Icon(
+                                                                  Icons
+                                                                      .my_location_outlined,
+                                                                  size: width *
+                                                                      0.038,
+                                                                  color:
+                                                                      Colors.red),
+                                                              Container(
+                                                                width:
+                                                                    width * 0.003,
+                                                                height:
+                                                                    width * 0.025,
+                                                                color: ColorConstant
+                                                                    .thirdColor
+                                                                    .withOpacity(
+                                                                        0.2),
+                                                              ),
+                                                              Icon(
+                                                                  CupertinoIcons
+                                                                      .location_north_line,
+                                                                  size: width *
+                                                                      0.045,
+                                                                  color: Colors
+                                                                      .green),
+                                                            ],
+                                                          ),
+                                                        ),
+
+                                                        SizedBox(
+                                                            width: width * 0.02),
+
+                                                        // from/to column (no name here)
+                                                        Expanded(
+                                                          child: Column(
+                                                            crossAxisAlignment:
+                                                                CrossAxisAlignment
+                                                                    .start,
+                                                            children: [
+                                                              Text(
+                                                                item["from"] ??
+                                                                    "-",
+                                                                maxLines: 1,
+                                                                overflow:
+                                                                    TextOverflow
+                                                                        .ellipsis,
+                                                                style: TextStyle(
+                                                                  color: ColorConstant
+                                                                      .thirdColor,
+                                                                  fontSize:
+                                                                      width *
+                                                                          0.03,
+                                                                ),
+                                                              ),
+                                                              SizedBox(
+                                                                height:
+                                                                    width * 0.03,
+                                                              ),
+                                                              Text(
+                                                                item["to"] ?? "-",
+                                                                maxLines: 1,
+                                                                overflow:
+                                                                    TextOverflow
+                                                                        .ellipsis,
+                                                                style: TextStyle(
+                                                                  color: ColorConstant
+                                                                      .thirdColor,
+                                                                  fontSize:
+                                                                      width *
+                                                                          0.03,
+                                                                ),
+                                                              ),
+                                                            ],
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          SizedBox(height: width * 0.03),
+                                          Row(
+                                            children: [
+                                              GestureDetector(
+                                                onTap: () {
+                                                  showCancelDialog(context);                                              },
+                                                child: Container(
+                                                  height: width * 0.08,
+                                                  width: width * 0.291,
+                                                  decoration: BoxDecoration(
+                                                    color: ColorConstant.color11
+                                                        .withOpacity(0.1),
+                                                    // border: Border.all(
+                                                    //     color: ColorConstant.color11
+                                                    //         .withOpacity(0.8)),
+                                                    borderRadius: BorderRadius.all(
+                                                        Radius.circular(
+                                                            width * 0.03)),
+                                                  ),
+                                                  alignment: Alignment.center,
+                                                  child: Text("Cancel",
+                                                      style: TextStyle(
+                                                          color:
+                                                              ColorConstant.color11,
+                                                          fontSize: width * 0.033,
+                                                          fontWeight:
+                                                              FontWeight.w700)),
+                                                ),
+                                              ),
+                                              const Spacer(),
+                                              GestureDetector(
+                                                onTap: () {
+                                                  Navigator.push(context, MaterialPageRoute(builder: (context) => ReschedulePage(),));
+                                                },
+                                                child: Container(
+                                                  height: width * 0.08,
+                                                  width: width * 0.29,
+                                                  decoration: BoxDecoration(
+                                                    color: ColorConstant.color11
+                                                        .withOpacity(0.9),
+                                                    borderRadius: BorderRadius.all(
+                                                        Radius.circular(
+                                                            width * 0.03)),
+                                                  ),
+                                                  alignment: Alignment.center,
+                                                  child: Text("Reschedule",
+                                                      style: TextStyle(
+                                                          color:
+                                                              ColorConstant.bgColor,
+                                                          fontSize: width * 0.033,
+                                                          fontWeight:
+                                                              FontWeight.w700)),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
                                       ),
-                                    ),
-                                  ),
-                                  Spacer(),
-                                  Container(
-                                    height: width * 0.07,
-                                    width: width * 0.22,
-                                    decoration: BoxDecoration(
-                                        color: ColorConstant.color11
-                                            .withOpacity(0.7),
-                                        borderRadius: BorderRadius.all(
-                                            Radius.circular(width * 0.03))),
-                                    child: Center(
-                                      child: Text(
-                                        "Check",
-                                        style: TextStyle(
-                                          color: ColorConstant.bgColor,
-                                          fontSize: width * 0.033,
-                                          fontWeight: FontWeight.w700,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              )
-                            ],
+                            // =================== END INLINE SWITCH ===================
                           ),
                         ),
                       );
                     },
                   ),
                 ),
-              ),
+
+
               Padding(
                 padding: EdgeInsets.all(width * 0.03),
                 child: Container(
@@ -1587,7 +1865,7 @@ class _HomePageState extends State<HomePage> {
                     border: Border.all(
                         color: ColorConstant.textColor2, width: width * 0.002),
                     borderRadius:
-                    BorderRadius.all(Radius.circular(width * 0.02)),
+                        BorderRadius.all(Radius.circular(width * 0.02)),
                   ),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,

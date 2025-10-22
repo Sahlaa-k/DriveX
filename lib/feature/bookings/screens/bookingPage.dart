@@ -1,8 +1,10 @@
 import 'package:drivex/core/constants/color_constant.dart';
 import 'package:drivex/core/constants/localVariables.dart';
-import 'package:drivex/feature/bookings/screens/cancelpage.dart';
+import 'package:drivex/core/widgets/BackGroundTopGradient.dart';
+import 'package:drivex/feature/bookings/screens/canceldpage.dart';
 import 'package:drivex/feature/bookings/screens/historyBookingPage.dart';
 import 'package:drivex/feature/bookings/screens/upcomingBookingPage.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 class BookingPagee extends StatefulWidget {
@@ -14,10 +16,9 @@ class BookingPagee extends StatefulWidget {
 
 class _BookingPageeState extends State<BookingPagee> {
   List<Map<String, dynamic>> tabs = [
-
     {
       "title": "Upcomings",
-      "screen": const Upcomingbookingpage(),
+      "screen": const UpcomingBookingPage(),
     },
     {
       "title": "Completed",
@@ -25,12 +26,12 @@ class _BookingPageeState extends State<BookingPagee> {
     },
     {
       "title": "Cancelled",
-      "screen": const CancelPage(),
+      "screen": CanceldPage(),
     },
   ];
 
   int selectedIndex = 0;
-
+TextEditingController searchController=TextEditingController();
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -53,12 +54,67 @@ class _BookingPageeState extends State<BookingPagee> {
                     ),
                   ),
                   Spacer(),
-                  Icon(Icons.search,color: ColorConstant.color11,)
+
                 ],
               ),
             ),
             SizedBox(height: width * 0.04),
+            Row(
+              children: [
+                Container(
+                  height: width * 0.11,
+                  width: width,
+                  child: Padding(
+                    padding:
+                    EdgeInsets.only(right: width * 0.03, left: width * 0.03),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: TextFormField(
+                            controller: searchController,
+                            style: TextStyle(
+                              color: ColorConstant.thirdColor,
+                              
+                            ),
+                            textCapitalization: TextCapitalization.none,
+                            keyboardType: TextInputType.emailAddress,
+                            textInputAction: TextInputAction.next,
+                            
+                            decoration: InputDecoration(
+                              filled: true,
+                              fillColor: ColorConstant.color11.withOpacity(0.1),
+                              prefixIcon: Icon(CupertinoIcons.search),
+                              prefixIconColor:
+                              ColorConstant.color11.withOpacity(0.7),
+                              hintText: "Search here!",
+                              hintStyle: TextStyle(
+                                  color:
+                                  ColorConstant.thirdColor.withOpacity(0.4),
+                                  fontSize: width * 0.03),
+                              contentPadding:
+                              EdgeInsets.symmetric(vertical: width * 0.01),
 
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(width * 0.03),
+                                borderSide: BorderSide(color: ColorConstant.bgColor, width: 1),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(width * 0.03),
+                                borderSide: BorderSide(color: ColorConstant.bgColor, width: 1),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(width * 0.03),
+                                borderSide: BorderSide(color: ColorConstant.bgColor, width: 1),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
             // Custom Tab Bar
             Container(
               height: width * 0.12,
@@ -100,7 +156,6 @@ class _BookingPageeState extends State<BookingPagee> {
                                 borderRadius: BorderRadius.circular(2),
                               ),
                             ),
-
                         ],
                       ),
                     ),
@@ -108,7 +163,9 @@ class _BookingPageeState extends State<BookingPagee> {
                 },
               ),
             ),
-Divider(color: ColorConstant.color11.withOpacity(0.2),),
+            Divider(
+              color: ColorConstant.color11.withOpacity(0.2),
+            ),
             SizedBox(height: width * 0.03),
 
             // Display the selected screen here
@@ -121,7 +178,6 @@ Divider(color: ColorConstant.color11.withOpacity(0.2),),
     );
   }
 }
-
 
 // Container(
 //   height: height*0.9,

@@ -1,10 +1,10 @@
 import 'package:drivex/core/constants/color_constant.dart';
 import 'package:drivex/core/constants/imageConstants.dart';
 import 'package:drivex/core/constants/localVariables.dart';
-import 'package:drivex/feature/bottomNavigation/pages/D2D/D2D_HistoryPage.dart';
-import 'package:drivex/feature/bottomNavigation/pages/D2D/D2D_page04.dart';
+// import 'package:drivex/feature/bottomNavigation/pages/D2D/D2D_HistoryPage.dart';
+// import 'package:drivex/feature/bottomNavigation/pages/D2D/D2D_page04.dart';
 import 'package:drivex/feature/bottomNavigation/pages/D2D/d2d.dart';
-import 'package:drivex/feature/bottomNavigation/pages/D2DPage_03.dart';
+// import 'package:drivex/feature/bottomNavigation/pages/D2DPage_03.dart';
 import 'package:drivex/feature/bottomNavigation/pages/D2D_page01.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -49,13 +49,13 @@ class _D2DMainpageState extends State<D2DMainpage> {
       'label': 'Schedule Service',
       'icon': Icons.event_available_rounded,
       'color': const Color(0xFF2F80FF),
-      'page': D2DPage03()
+      // 'page': D2DPage03()
     },
     {
       'label': 'Track Order',
       'icon': Icons.location_on_rounded,
       'color': const Color(0xFF16C65B),
-      'page': D2DPage04()
+      // 'page': D2DPage04()
     },
     {
       'label': 'Support',
@@ -67,31 +67,31 @@ class _D2DMainpageState extends State<D2DMainpage> {
       'label': 'History',
       'icon': Icons.history_rounded,
       'color': const Color(0xFFFF7A21),
-      'page': D2DHistorypage()
+      // 'page': D2DHistorypage()
     },
     {
       'label': 'Saved Address',
       'icon': Icons.book_outlined,
       'color': const Color(0xFFFF2D55),
-      'page': D2DHistorypage()
+      // 'page': D2DHistorypage()
     },
     {
       'label': 'Wallet',
       'icon': Icons.account_balance_wallet_rounded,
       'color': const Color(0xFF9B51E0),
-      'page': D2DHistorypage()
+      // 'page': D2DHistorypage()
     },
     {
       'label': 'Settings',
       'icon': Icons.settings_rounded,
       'color': const Color(0xFF56CCF2),
-      'page': D2DHistorypage()
+      // 'page': D2DHistorypage()
     },
     {
       'label': 'Feedback',
       'icon': Icons.feedback_rounded,
       'color': const Color(0xFFFFC107),
-      'page': D2DHistorypage()
+      // 'page': D2DHistorypage()
     },
   ];
 

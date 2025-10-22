@@ -18,10 +18,10 @@ class _BottomNavDemoState extends State<BottomNavDemo> {
 
   final List<IconData> iconList = [
     Icons.home,
-    Icons.list_alt, // Booking
+    Icons.list_alt,
     Icons.local_taxi,
-    Icons.delivery_dining, // Vehicle
-    Icons.person, // Profile
+    Icons.delivery_dining,
+    Icons.person,
   ];
 
   final List<String> labels = [

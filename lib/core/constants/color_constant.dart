@@ -17,8 +17,9 @@ class ColorConstant {
   static const thirdColor = Color(0xFF000000);
   static const backgroundColor = Color(0xFFF4F6FA);
   static const cardColor = Color(0xFFFFFFFF);
-  static const color1 = Color(0xFF3E8E7E);
   static const color11 = Color(0xFF004c4c);
+  static const color1 = Color(0xFF3E8E7E);
+
   //static const color11 = Color(0xFF627c38);
 
 // static const redColor=Color(0xFF7C0A02);
