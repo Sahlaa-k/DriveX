@@ -1,0 +1,616 @@
+// address page
+
+// import 'package:cloud_firestore/cloud_firestore.dart';
+// import 'package:drivex/core/constants/localVariables.dart';
+// import 'package:firebase_auth/firebase_auth.dart';
+// import 'package:flutter/material.dart';
+// import 'package:geolocator/geolocator.dart';
+// import 'package:geocoding/geocoding.dart';
+
+// class Addressbookpage extends StatefulWidget {
+//   const Addressbookpage({super.key});
+//   @override
+//   State<Addressbookpage> createState() => _AddressbookpageState();
+// }
+
+// class _AddressbookpageState extends State<Addressbookpage> {
+//   User? get _user => FirebaseAuth.instance.currentUser;
+
+//   CollectionReference<Map<String, dynamic>> get _col =>
+//       FirebaseFirestore.instance
+//           .collection('users')
+//           .doc(_user!.uid)
+//           .collection('saved_addresses');
+
+//   @override
+//   Widget build(BuildContext context) {
+//     if (_user == null) {
+//       return Scaffold(
+//         appBar: AppBar(title: const Text('Saved Addresses')),
+//         body: Center(
+//           child: Text(
+//             'Please sign in to view saved addresses',
+//             style: TextStyle(fontSize: width * .04),
+//           ),
+//         ),
+//       );
+//     }
+
+//     return Scaffold(
+//       appBar: AppBar(title: const Text('Saved Addresses')),
+//       floatingActionButton: SizedBox(
+//         height: width * .15,
+//         child: FloatingActionButton.extended(
+//           onPressed: () => _openAddressForm(context),
+//           icon: Icon(Icons.add, size: width * .065),
+//           label: Text('Add Address', style: TextStyle(fontSize: width * .038)),
+//         ),
+//       ),
+//       body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+//         stream: _col.orderBy('updatedAt', descending: true).snapshots(),
+//         builder: (context, snap) {
+//           if (snap.connectionState == ConnectionState.waiting) {
+//             return const Center(child: CircularProgressIndicator());
+//           }
+//           if (snap.hasError) {
+//             return Center(
+//               child: Text('Error: ${snap.error}',
+//                   style: TextStyle(fontSize: width * .038)),
+//             );
+//           }
+//           final docs = snap.data?.docs ?? [];
+//           if (docs.isEmpty) {
+//             return _EmptyState(
+//                 onAdd: () => _openAddressForm(context), w: width);
+//           }
+
+//           return ListView.separated(
+//             padding: EdgeInsets.fromLTRB(
+//                 width * .04, width * .04, width * .04, width * .25),
+//             itemCount: docs.length,
+//             separatorBuilder: (_, __) => SizedBox(height: width * .03),
+//             itemBuilder: (context, i) {
+//               final d = docs[i].data();
+//               final id = docs[i].id;
+//               final type = (d['type'] ?? 'other') as String;
+//               final label = (d['label'] ?? _prettyType(type)) as String;
+//               final address = (d['address'] ?? '') as String;
+
+//               return _AddressCard(
+//                 w: width,
+//                 type: type,
+//                 label: label,
+//                 address: address,
+//                 onTap: () {
+//                   // Navigator.pop(context, {'label': label, 'address': address, 'docId': id});
+//                 },
+//                 onEdit: () => _openAddressForm(context, docId: id, initial: d),
+//                 onDelete: () => _confirmDelete(context, id),
+//               );
+//             },
+//           );
+//         },
+//       ),
+//     );
+//   }
+
+//   Future<void> _confirmDelete(BuildContext context, String docId) async {
+//     final ok = await showDialog<bool>(
+//       context: context,
+//       builder: (ctx) => AlertDialog(
+//         title: const Text('Delete address?'),
+//         content:
+//             const Text('This address will be removed from your saved list.'),
+//         actions: [
+//           TextButton(
+//               onPressed: () => Navigator.pop(ctx, false),
+//               child: const Text('Cancel')),
+//           FilledButton(
+//               onPressed: () => Navigator.pop(ctx, true),
+//               child: const Text('Delete')),
+//         ],
+//       ),
+//     );
+//     if (ok == true) {
+//       await _col.doc(docId).delete();
+//       if (!mounted) return;
+//       ScaffoldMessenger.of(context)
+//           .showSnackBar(const SnackBar(content: Text('Address deleted')));
+//     }
+//   }
+
+//   /// Add/Edit bottom sheet
+//   Future<void> _openAddressForm(BuildContext context,
+//       {String? docId, Map<String, dynamic>? initial}) async {
+//     final formKey = GlobalKey<FormState>();
+//     final type = ValueNotifier<String>((initial?['type'] ?? 'other') as String);
+//     final labelCtrl =
+//         TextEditingController(text: (initial?['label'] ?? '') as String);
+//     final addressCtrl =
+//         TextEditingController(text: (initial?['address'] ?? '') as String);
+//     final phoneCtrl =
+//         TextEditingController(text: (initial?['phone'] ?? '') as String);
+//     final nameCtrl =
+//         TextEditingController(text: (initial?['name'] ?? '') as String);
+//     final noteCtrl =
+//         TextEditingController(text: (initial?['note'] ?? '') as String);
+
+//     // Prefill label from the current type if it's empty (Add flow)
+//     if ((docId == null) && labelCtrl.text.trim().isEmpty) {
+//       labelCtrl.text = _prettyType(type.value);
+//     }
+
+//     await showModalBottomSheet(
+//       context: context,
+//       isScrollControlled: true,
+//       useSafeArea: true,
+//       showDragHandle: true,
+//       backgroundColor: Colors.white,
+//       builder: (ctx) {
+//         final insets = MediaQuery.of(ctx).viewInsets.bottom;
+//         final inputH = width * .095; // compact height
+//         final locating = ValueNotifier(false);
+
+//         Widget boxField({
+//           required TextEditingController controller,
+//           required String hint,
+//           String? labelText,
+//           TextInputType? keyboardType,
+//           int maxLines = 1,
+//           String? Function(String?)? validator,
+//         }) {
+//           return SizedBox(
+//             height: maxLines == 1 ? inputH : null,
+//             child: TextFormField(
+//               controller: controller,
+//               keyboardType: keyboardType,
+//               validator: validator,
+//               maxLines: maxLines,
+//               textAlignVertical: TextAlignVertical.center,
+//               style: TextStyle(fontSize: width * .035),
+//               decoration: InputDecoration(
+//                 isDense: true,
+//                 labelText: labelText,
+//                 labelStyle: TextStyle(fontSize: width * .035),
+//                 hintText: hint,
+//                 hintStyle:
+//                     TextStyle(fontSize: width * .035, color: Colors.black45),
+//                 filled: false,
+//                 contentPadding: EdgeInsets.symmetric(
+//                   horizontal: width * .03,
+//                   vertical: width * .022,
+//                 ),
+//                 border: OutlineInputBorder(
+//                   borderRadius: BorderRadius.circular(width * .03),
+//                 ),
+//                 enabledBorder: OutlineInputBorder(
+//                   borderRadius: BorderRadius.circular(width * .03),
+//                   borderSide: BorderSide(
+//                       color: const Color(0xFFDFE3EA), width: width * .003),
+//                 ),
+//                 focusedBorder: OutlineInputBorder(
+//                   borderRadius: BorderRadius.circular(width * .03),
+//                   borderSide: BorderSide(
+//                       color: const Color(0xFF2F6BFF), width: width * .004),
+//                 ),
+//               ),
+//             ),
+//           );
+//         }
+
+//         Future<void> _fillWithCurrentLocation() async {
+//           locating.value = true;
+//           try {
+//             if (!await Geolocator.isLocationServiceEnabled()) {
+//               throw Exception('Location services are disabled');
+//             }
+//             var perm = await Geolocator.checkPermission();
+//             if (perm == LocationPermission.denied) {
+//               perm = await Geolocator.requestPermission();
+//             }
+//             if (perm == LocationPermission.denied ||
+//                 perm == LocationPermission.deniedForever) {
+//               throw Exception('Location permission denied');
+//             }
+
+//             final pos = await Geolocator.getCurrentPosition(
+//                 desiredAccuracy: LocationAccuracy.high);
+//             final pm =
+//                 await placemarkFromCoordinates(pos.latitude, pos.longitude);
+
+//             String formatted = 'Current location';
+//             if (pm.isNotEmpty) {
+//               final p = pm.first;
+//               final parts = <String?>[
+//                 p.name,
+//                 p.street,
+//                 p.subLocality,
+//                 p.locality,
+//                 p.administrativeArea,
+//                 p.postalCode,
+//                 p.country,
+//               ]
+//                   .where((e) => e != null && e!.trim().isNotEmpty)
+//                   .cast<String>()
+//                   .toList();
+//               formatted = parts.join(', ');
+//             }
+//             addressCtrl.text = formatted;
+//           } catch (e) {
+//             if (context.mounted) {
+//               ScaffoldMessenger.of(context).showSnackBar(
+//                 SnackBar(content: Text('Unable to fetch location: $e')),
+//               );
+//             }
+//           } finally {
+//             locating.value = false;
+//           }
+//         }
+
+//         return Padding(
+//           padding: EdgeInsets.fromLTRB(
+//               width * .04, 0, width * .04, insets + width * .035),
+//           child: Form(
+//             key: formKey,
+//             child: ListView(
+//               shrinkWrap: true,
+//               children: [
+//                 Text(
+//                   docId == null ? 'Add Address' : 'Edit Address',
+//                   style: TextStyle(
+//                       fontSize: width * .048, fontWeight: FontWeight.w700),
+//                 ),
+
+//                 SizedBox(height: width * .022),
+//                 Text('Type',
+//                     style: TextStyle(
+//                         fontSize: width * .03, color: Colors.black54)),
+//                 SizedBox(height: width * .010),
+
+//                 // Chips -> always rewrite label to selected type
+//                 ValueListenableBuilder<String>(
+//                   valueListenable: type,
+//                   builder: (_, value, __) => Wrap(
+//                     spacing: width * .016,
+//                     runSpacing: width * .012,
+//                     children: [
+//                       _chip('home', value, type, width,
+//                           labelController: labelCtrl),
+//                       _chip('work', value, type, width,
+//                           labelController: labelCtrl),
+//                       _chip('other', value, type, width,
+//                           labelController: labelCtrl),
+//                     ],
+//                   ),
+//                 ),
+
+//                 SizedBox(height: width * .028),
+//                 boxField(
+//                   controller: labelCtrl,
+//                   hint: 'Home, Grandma House…',
+//                   labelText: 'Label (optional)',
+//                 ),
+//                 SizedBox(height: width * .02),
+
+//                 // Address + Current Location
+//                 Row(
+//                   children: [
+//                     Expanded(
+//                       child: boxField(
+//                         controller: addressCtrl,
+//                         hint: 'Enter full address',
+//                         labelText: 'Full Address *',
+//                         maxLines: 3,
+//                         validator: (v) => (v == null || v.trim().isEmpty)
+//                             ? 'Address required'
+//                             : null,
+//                       ),
+//                     ),
+//                     SizedBox(width: width * .016),
+//                     ValueListenableBuilder<bool>(
+//                       valueListenable: locating,
+//                       builder: (_, isLoading, __) => SizedBox(
+//                         width: width * .13,
+//                         height: width * .13,
+//                         child: ElevatedButton(
+//                           onPressed:
+//                               isLoading ? null : _fillWithCurrentLocation,
+//                           style: ElevatedButton.styleFrom(
+//                             padding: EdgeInsets.zero,
+//                             shape: RoundedRectangleBorder(
+//                               borderRadius: BorderRadius.circular(width * .03),
+//                             ),
+//                           ),
+//                           child: isLoading
+//                               ? SizedBox(
+//                                   height: width * .055,
+//                                   width: width * .055,
+//                                   child: const CircularProgressIndicator(
+//                                     strokeWidth: 2,
+//                                   ),
+//                                 )
+//                               : Icon(Icons.my_location, size: width * .055),
+//                         ),
+//                       ),
+//                     ),
+//                   ],
+//                 ),
+
+//                 SizedBox(height: width * .02),
+//                 boxField(
+//                   controller: nameCtrl,
+//                   hint: 'Contact name',
+//                   labelText: 'Contact Name (optional)',
+//                 ),
+//                 SizedBox(height: width * .02),
+//                 boxField(
+//                   controller: phoneCtrl,
+//                   hint: 'Contact phone',
+//                   labelText: 'Contact Phone (optional)',
+//                   keyboardType: TextInputType.phone,
+//                 ),
+//                 SizedBox(height: width * .02),
+//                 boxField(
+//                   controller: noteCtrl,
+//                   hint: 'Door code, landmark…',
+//                   labelText: 'Note (optional)',
+//                 ),
+
+//                 SizedBox(height: width * .03),
+//                 SizedBox(
+//                   height: width * .12,
+//                   child: FilledButton(
+//                     onPressed: () async {
+//                       if (!formKey.currentState!.validate()) return;
+
+//                       final now = FieldValue.serverTimestamp();
+//                       final data = <String, dynamic>{
+//                         'type': type.value,
+//                         'label': (labelCtrl.text.trim().isEmpty)
+//                             ? _prettyType(type.value)
+//                             : labelCtrl.text.trim(),
+//                         'address': addressCtrl.text.trim(),
+//                         'name': nameCtrl.text.trim(),
+//                         'phone': phoneCtrl.text.trim(),
+//                         'note': noteCtrl.text.trim(),
+//                         'updatedAt': now,
+//                         if (docId == null) 'createdAt': now,
+//                       };
+
+//                       if (docId == null) {
+//                         await _col.add(data);
+//                         if (!context.mounted) return;
+//                         Navigator.pop(ctx);
+//                         ScaffoldMessenger.of(context).showSnackBar(
+//                           const SnackBar(content: Text('Address saved')),
+//                         );
+//                       } else {
+//                         await _col
+//                             .doc(docId)
+//                             .set(data, SetOptions(merge: true));
+//                         if (!context.mounted) return;
+//                         Navigator.pop(ctx);
+//                         ScaffoldMessenger.of(context).showSnackBar(
+//                           const SnackBar(content: Text('Address updated')),
+//                         );
+//                       }
+//                     },
+//                     child: Text(
+//                       docId == null ? 'Save Address' : 'Update Address',
+//                       style: TextStyle(
+//                           fontSize: width * .038, fontWeight: FontWeight.w700),
+//                     ),
+//                   ),
+//                 ),
+//               ],
+//             ),
+//           ),
+//         );
+//       },
+//     );
+//   }
+
+//   String _prettyType(String t) {
+//     switch (t) {
+//       case 'home':
+//         return 'Home';
+//       case 'work':
+//         return 'Work';
+//       default:
+//         return 'Other';
+//     }
+//   }
+
+//   // ——— Emoji chips with green outline (no tick) ———
+//   static const Map<String, String> _chipEmoji = {
+//     'home': '🏠',
+//     'work': '🏢',
+//     'other': '📍',
+//   };
+//   static const Color kChipGreen = Color(0xFF22A45D);
+
+//   Widget _chip(
+//     String value,
+//     String current,
+//     ValueNotifier<String> controller,
+//     double w, {
+//     TextEditingController? labelController,
+//   }) {
+//     final selected = value == current;
+
+//     return ChoiceChip(
+//       selected: selected,
+//       onSelected: (_) {
+//         controller.value = value;
+//         if (labelController != null) {
+//           // Always clear and overwrite with the chip's name
+//           labelController
+//             ..text = _prettyType(value)
+//             ..selection = TextSelection.fromPosition(
+//               TextPosition(offset: labelController.text.length),
+//             );
+//         }
+//       },
+//       showCheckmark: false,
+//       avatar: Text(
+//         _chipEmoji[value] ?? '📍',
+//         style: TextStyle(fontSize: width * .035), // smaller emoji
+//       ),
+//       label: Text(
+//         _prettyType(value),
+//         style: TextStyle(
+//           fontSize: width * .032,
+//           fontWeight: FontWeight.w600,
+//           color: selected ? kChipGreen : Colors.black87,
+//         ),
+//       ),
+//       backgroundColor: Colors.grey.shade100,
+//       selectedColor: kChipGreen.withOpacity(.10),
+//       shape: RoundedRectangleBorder(
+//         borderRadius: BorderRadius.circular(width * .03),
+//         side: BorderSide(
+//           color: selected ? kChipGreen : Colors.grey.shade300,
+//           width: selected ? width * .006 : width * .003,
+//         ),
+//       ),
+//       labelPadding:
+//           EdgeInsets.symmetric(horizontal: width * .02, vertical: width * .008),
+//       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+//       visualDensity: const VisualDensity(horizontal: -2, vertical: -2),
+//     );
+//   }
+// }
+
+// /// Empty state
+// class _EmptyState extends StatelessWidget {
+//   const _EmptyState({required this.onAdd, required this.w});
+//   final VoidCallback onAdd;
+//   final double w;
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return Center(
+//       child: Padding(
+//         padding: EdgeInsets.symmetric(horizontal: width * .08),
+//         child: Column(
+//           mainAxisSize: MainAxisSize.min,
+//           children: [
+//             Icon(Icons.location_off_outlined,
+//                 size: width * .18, color: Colors.black38),
+//             SizedBox(height: width * .03),
+//             Text('No saved addresses',
+//                 style: TextStyle(
+//                     fontSize: width * .045, fontWeight: FontWeight.w700)),
+//             SizedBox(height: width * .015),
+//             Text(
+//               'Add your frequently used locations to pick them quickly while booking.',
+//               textAlign: TextAlign.center,
+//               style: TextStyle(fontSize: width * .035, color: Colors.black54),
+//             ),
+//             SizedBox(height: width * .04),
+//             SizedBox(
+//               height: width * .12,
+//               child: OutlinedButton.icon(
+//                 onPressed: onAdd,
+//                 icon: Icon(Icons.add, size: width * .06),
+//                 label: Text('Add Address',
+//                     style: TextStyle(fontSize: width * .04)),
+//               ),
+//             ),
+//           ],
+//         ),
+//       ),
+//     );
+//   }
+// }
+
+// /// Address tile – uses emojis instead of Material icons
+// class _AddressCard extends StatelessWidget {
+//   const _AddressCard({
+//     required this.w,
+//     required this.type,
+//     required this.label,
+//     required this.address,
+//     this.onTap,
+//     this.onEdit,
+//     this.onDelete,
+//   });
+
+//   final double w;
+//   final String type;
+//   final String label;
+//   final String address;
+//   final VoidCallback? onTap;
+//   final VoidCallback? onEdit;
+//   final VoidCallback? onDelete;
+
+//   String get _emoji {
+//     switch (type) {
+//       case 'home':
+//         return '🏠';
+//       case 'work':
+//         return '🏢';
+//       default:
+//         return '📍';
+//     }
+//   }
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return Material(
+//       elevation: 2,
+//       shadowColor: Colors.black12,
+//       borderRadius: BorderRadius.circular(width * .04),
+//       color: Colors.white,
+//       child: InkWell(
+//         borderRadius: BorderRadius.circular(width * .04),
+//         onTap: onTap,
+//         child: Padding(
+//           padding: EdgeInsets.fromLTRB(
+//               width * .035, width * .03, width * .02, width * .03),
+//           child: Row(
+//             crossAxisAlignment: CrossAxisAlignment.start,
+//             children: [
+//               CircleAvatar(
+//                 radius: width * .06,
+//                 backgroundColor: Colors.grey.shade100,
+//                 child: Text(_emoji, style: TextStyle(fontSize: width * .045)),
+//               ),
+//               SizedBox(width: width * .03),
+//               Expanded(
+//                 child: Column(
+//                   crossAxisAlignment: CrossAxisAlignment.start,
+//                   children: [
+//                     Text(label,
+//                         style: TextStyle(
+//                             fontSize: width * .042,
+//                             fontWeight: FontWeight.w700)),
+//                     SizedBox(height: width * .01),
+//                     Text(
+//                       address,
+//                       maxLines: 3,
+//                       overflow: TextOverflow.ellipsis,
+//                       style: TextStyle(
+//                           color: Colors.grey.shade700, fontSize: width * .035),
+//                     ),
+//                   ],
+//                 ),
+//               ),
+//               PopupMenuButton<String>(
+//                 onSelected: (v) {
+//                   if (v == 'edit') onEdit?.call();
+//                   if (v == 'delete') onDelete?.call();
+//                 },
+//                 itemBuilder: (_) => const [
+//                   PopupMenuItem(value: 'edit', child: Text('Edit')),
+//                   PopupMenuItem(value: 'delete', child: Text('Delete')),
+//                 ],
+//                 icon: Icon(Icons.more_vert, size: width * .06),
+//               ),
+//             ],
+//           ),
+//         ),
+//       ),
+//     );
+//   }
+// }

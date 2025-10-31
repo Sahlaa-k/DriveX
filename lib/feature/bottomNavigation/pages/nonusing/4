@@ -1,0 +1,1181 @@
+
+import 'dart:async';
+import 'dart:convert';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:dotted_border/dotted_border.dart';
+import 'package:drivex/core/constants/color_constant.dart';
+import 'package:drivex/core/constants/imageConstants.dart';
+import 'package:drivex/feature/bottomNavigation/pages/D2D/D2D_placeSearchPage.dart';
+import 'package:drivex/feature/bottomNavigation/pages/D2DPage_02.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:http/http.dart' as http;
+import 'package:geolocator/geolocator.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:uuid/uuid.dart';
+
+const String googleApiKey = "AIzaSyDwD1BJXVxky_Cy6xzyQh_5A2PW9cTOO0I";
+
+/// Top-level helper for VIA stops (between pickup and destination)
+class _StopItem {
+  final TextEditingController controller;
+  bool isPending; // true -> grey dot
+
+  _StopItem({String initial = ""})
+      : controller = TextEditingController(text: initial),
+        isPending = initial.trim().isEmpty;
+}
+
+class D2DPage01 extends StatefulWidget {
+  const D2DPage01({super.key});
+  @override
+  State<D2DPage01> createState() => _D2DPage01State();
+}
+
+class _D2DPage01State extends State<D2DPage01> {
+  // ─────────────────────────────────────────────────────────────────────────────
+  // STATE: controllers and trip/session
+  // ─────────────────────────────────────────────────────────────────────────────
+  final TextEditingController fromController =
+      TextEditingController(); // pickup
+  final TextEditingController toController = TextEditingController(); // drop
+  final List<_StopItem> _stops = <_StopItem>[]; // via
+
+  bool get _hasPickup => fromController.text.trim().isNotEmpty;
+
+  String? tripId;
+  StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>? tripSub;
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // INIT / DISPOSE
+  // ─────────────────────────────────────────────────────────────────────────────
+  @override
+  void initState() {
+    super.initState();
+    _createTripDocument();
+
+    // Show/hide Destination & Stop strips dynamically
+    fromController.addListener(() {
+      if (!mounted) return;
+      setState(() {}); // just to rebuild guards
+    });
+  }
+
+  @override
+  void dispose() {
+    fromController.dispose();
+    toController.dispose();
+    for (final s in _stops) {
+      s.controller.dispose();
+    }
+    tripSub?.cancel();
+    super.dispose();
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // FIRESTORE: create trip + listen to updates
+  // ─────────────────────────────────────────────────────────────────────────────
+  Future<void> _createTripDocument() async {
+    final docRef =
+        await FirebaseFirestore.instance.collection("locationRequests").add({
+      "pickupLocation": null,
+      "dropLocation": null,
+      "viaStops": <String>[],
+      "senderName": "Kamal",
+      "senderPhone": "9876543210",
+      "createdAt": FieldValue.serverTimestamp(),
+    });
+
+    tripId = docRef.id;
+    _listenToTripUpdates();
+  }
+
+  void _listenToTripUpdates() {
+    final id = tripId;
+    if (id == null) return;
+
+    tripSub?.cancel();
+    tripSub = FirebaseFirestore.instance
+        .collection("locationRequests")
+        .doc(id)
+        .snapshots()
+        .listen((doc) {
+      if (!doc.exists) return;
+      final data = doc.data();
+      if (data == null) return;
+
+      // Update text views from Firestore (optional, you can remove if you only want local input)
+      final pickupLoc = data['pickupLocation'];
+      if (pickupLoc != null) {
+        final lat = (pickupLoc['lat'] as num?)?.toDouble();
+        final lng = (pickupLoc['lng'] as num?)?.toDouble();
+        if (lat != null && lng != null) {
+          final text = "($lat, $lng)";
+          if (fromController.text != text) {
+            fromController.text = text;
+          }
+        }
+      }
+
+      final dropLoc = data['dropLocation'];
+      if (dropLoc != null) {
+        final lat = (dropLoc['lat'] as num?)?.toDouble();
+        final lng = (dropLoc['lng'] as num?)?.toDouble();
+        if (lat != null && lng != null) {
+          final text = "($lat, $lng)";
+          if (toController.text != text) {
+            toController.text = text;
+          }
+        }
+      }
+
+      final List<dynamic>? via = data['viaStops'] as List<dynamic>?;
+      if (via != null) {
+        // Sync into local stops (simple one-way sync of labels)
+        _stops
+          ..clear()
+          ..addAll(via.map((e) {
+            final s = _StopItem(initial: (e as String?) ?? "");
+            s.isPending = s.controller.text.trim().isEmpty;
+            return s;
+          }));
+        if (mounted) setState(() {});
+      }
+    });
+  }
+
+  Future<void> _syncViaStopsToFirestore() async {
+    final id = tripId;
+    if (id == null) return;
+    final labels =
+        _stops.map((s) => s.controller.text.trim()).toList(growable: false);
+    await FirebaseFirestore.instance
+        .collection("locationRequests")
+        .doc(id)
+        .update({"viaStops": labels});
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // SHARE LINK SHEET (request location)
+  // ─────────────────────────────────────────────────────────────────────────────
+  void openRequestLocationSheet(BuildContext context, String slot) {
+    // Your existing implementation was long; keeping it intact:
+    showCupertinoModalPopup(
+      context: context,
+      barrierColor: Colors.black.withOpacity(.35),
+      builder: (ctx) {
+        Future<Map<String, dynamic>>? linkFuture;
+
+        return StatefulBuilder(
+          builder: (ctx, setSheet) {
+            linkFuture ??= _sendLocationRequest(slot);
+            final size = MediaQuery.of(ctx).size;
+            final width = size.width;
+            final height = size.height;
+
+            return Material(
+              color: Colors.transparent,
+              child: SafeArea(
+                top: false,
+                child: Align(
+                  alignment: Alignment.bottomCenter,
+                  child: Container(
+                    width: width,
+                    height: height * .65,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.vertical(
+                          top: Radius.circular(width * .05)),
+                    ),
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: width * .05,
+                        vertical: width * .04,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Center(
+                            child: Container(
+                              width: width * .18,
+                              height: width * .013,
+                              decoration: BoxDecoration(
+                                color: Colors.black12,
+                                borderRadius:
+                                    BorderRadius.circular(width * .01),
+                              ),
+                            ),
+                          ),
+                          SizedBox(height: width * .035),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  "Request Location",
+                                  style: TextStyle(
+                                    fontSize: width * .05,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
+                              CupertinoButton(
+                                padding: EdgeInsets.zero,
+                                onPressed: () => Navigator.pop(ctx),
+                                child: Icon(
+                                  CupertinoIcons.xmark,
+                                  size: width * .06,
+                                ),
+                              )
+                            ],
+                          ),
+                          SizedBox(height: width * .01),
+                          Text(
+                            'Share the link below to get the ${slot.toUpperCase()} location.',
+                            style: TextStyle(
+                              fontSize: width * .0325,
+                              color: Colors.black54,
+                            ),
+                          ),
+                          SizedBox(height: width * .04),
+                          Expanded(
+                            child: FutureBuilder<Map<String, dynamic>>(
+                              future: linkFuture,
+                              builder: (ctx, snap) {
+                                if (snap.connectionState ==
+                                    ConnectionState.waiting) {
+                                  return Center(
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const CupertinoActivityIndicator(
+                                            radius: 14),
+                                        SizedBox(height: width * .03),
+                                        Text(
+                                          "Generating secure link…",
+                                          style: TextStyle(
+                                            fontSize: width * .034,
+                                            color: Colors.black54,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                }
+                                if (snap.hasError) {
+                                  return Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        CupertinoIcons.exclamationmark_triangle,
+                                        color: Colors.red,
+                                        size: width * .12,
+                                      ),
+                                      SizedBox(height: width * .02),
+                                      Text(
+                                        "Couldn't create link",
+                                        style: TextStyle(
+                                          fontSize: width * .042,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                      SizedBox(height: width * .02),
+                                      Text(
+                                        "${snap.error}",
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                          fontSize: width * .032,
+                                          color: Colors.black54,
+                                        ),
+                                      ),
+                                      SizedBox(height: width * .04),
+                                      CupertinoButton.filled(
+                                        onPressed: () => setSheet(
+                                          () => linkFuture =
+                                              _sendLocationRequest(slot),
+                                        ),
+                                        child: const Text("Try again"),
+                                      ),
+                                    ],
+                                  );
+                                }
+
+                                final data = snap.data!;
+                                final link = data['link'] as String;
+                                final expiresAt = data['expiresAt'] as String?;
+
+                                return Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Container(
+                                      padding: EdgeInsets.all(width * .035),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFF5F7FA),
+                                        border: Border.all(
+                                          color: const Color(0xFFE5E9F0),
+                                        ),
+                                        borderRadius:
+                                            BorderRadius.circular(width * .03),
+                                      ),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            "Share this link",
+                                            style: TextStyle(
+                                              fontSize: width * .035,
+                                              color: Colors.black54,
+                                            ),
+                                          ),
+                                          SizedBox(height: width * .02),
+                                          SelectableText(
+                                            link,
+                                            style: TextStyle(
+                                              fontSize: width * .034,
+                                              fontFamily: 'monospace',
+                                            ),
+                                          ),
+                                          if (expiresAt != null) ...[
+                                            SizedBox(height: width * .02),
+                                            Text(
+                                              "Expires: $expiresAt",
+                                              style: TextStyle(
+                                                fontSize: width * .03,
+                                                color: Colors.black45,
+                                              ),
+                                            ),
+                                          ],
+                                          SizedBox(height: width * .02),
+                                          Row(
+                                            children: [
+                                              Expanded(
+                                                child: CupertinoButton(
+                                                  color:
+                                                      const Color(0xFFE8F3FF),
+                                                  padding: EdgeInsets.symmetric(
+                                                    vertical: width * .028,
+                                                  ),
+                                                  onPressed: () async {
+                                                    await Clipboard.setData(
+                                                      ClipboardData(text: link),
+                                                    );
+                                                    if (mounted) {
+                                                      ScaffoldMessenger.of(
+                                                              context)
+                                                          .showSnackBar(
+                                                        const SnackBar(
+                                                          content: Text(
+                                                              "Link copied"),
+                                                          behavior:
+                                                              SnackBarBehavior
+                                                                  .floating,
+                                                          duration: Duration(
+                                                              seconds: 1),
+                                                        ),
+                                                      );
+                                                    }
+                                                  },
+                                                  child: Row(
+                                                    mainAxisAlignment:
+                                                        MainAxisAlignment
+                                                            .center,
+                                                    children: [
+                                                      Icon(
+                                                        CupertinoIcons
+                                                            .doc_on_doc,
+                                                        size: width * .05,
+                                                        color: const Color(
+                                                            0xFF1976D2),
+                                                      ),
+                                                      SizedBox(
+                                                          width: width * .02),
+                                                      Text(
+                                                        "Copy link",
+                                                        style: TextStyle(
+                                                          fontSize:
+                                                              width * .035,
+                                                          fontWeight:
+                                                              FontWeight.w700,
+                                                          color: const Color(
+                                                              0xFF1976D2),
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ),
+                                              SizedBox(width: width * .03),
+                                              Expanded(
+                                                child: CupertinoButton.filled(
+                                                  padding: EdgeInsets.symmetric(
+                                                    vertical: width * .028,
+                                                  ),
+                                                  onPressed: () async {
+                                                    await Share.share(
+                                                      link,
+                                                      subject:
+                                                          "Share your ${slot.toUpperCase()} location",
+                                                    );
+                                                  },
+                                                  child: Row(
+                                                    mainAxisAlignment:
+                                                        MainAxisAlignment
+                                                            .center,
+                                                    children: [
+                                                      Icon(CupertinoIcons.share,
+                                                          size: width * .05),
+                                                      SizedBox(
+                                                          width: width * .02),
+                                                      Text(
+                                                        "Share",
+                                                        style: TextStyle(
+                                                          fontSize:
+                                                              width * .035,
+                                                          fontWeight:
+                                                              FontWeight.w700,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    SizedBox(height: width * .04),
+                                    Text(
+                                      "Recent Request",
+                                      style: TextStyle(
+                                        fontSize: width * .036,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                    SizedBox(height: width * .025),
+                                    Container(
+                                      height: width * .25,
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFF5F7FA),
+                                        border:
+                                            Border.all(color: Colors.black12),
+                                        borderRadius:
+                                            BorderRadius.circular(width * .03),
+                                      ),
+                                      child: Center(
+                                        child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            Icon(
+                                              CupertinoIcons.location_solid,
+                                              color: Colors.redAccent,
+                                              size: width * .06,
+                                            ),
+                                            SizedBox(width: width * .03),
+                                            Text(
+                                              "No recent Location",
+                                              style: TextStyle(
+                                                fontSize: width * .04,
+                                                color: Colors.black54,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                    SizedBox(height: width * .025),
+                                    SizedBox(
+                                      width: double.infinity,
+                                      child: CupertinoButton(
+                                        color: const Color(0xFF1E88E5),
+                                        onPressed: () => Navigator.pop(ctx),
+                                        child: Text(
+                                          "Done",
+                                          style: TextStyle(
+                                            fontSize: width * .04,
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<Map<String, dynamic>> _sendLocationRequest(String type) async {
+    if (tripId == null) {
+      await _createTripDocument();
+    }
+    final id = tripId!;
+    final shareId = const Uuid().v4();
+    final expiresAtDt = DateTime.now().add(const Duration(hours: 24));
+    final link = "https://drivex-2a34e.web.app/?id=$id&type=$type&sid=$shareId";
+
+    await FirebaseFirestore.instance
+        .collection("locationRequests")
+        .doc(id)
+        .collection("shares")
+        .doc(shareId)
+        .set({
+      "type": type,
+      "link": link,
+      "status": "sent",
+      "createdAt": FieldValue.serverTimestamp(),
+      "expiresAt": Timestamp.fromDate(expiresAtDt),
+    });
+
+    return {"link": link, "expiresAt": expiresAtDt.toIso8601String()};
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // HELPERS: UI & add/remove/validate
+  // ─────────────────────────────────────────────────────────────────────────────
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  bool _allCardsAreFilled() {
+    if (fromController.text.trim().isEmpty) return false;
+    if (toController.text.trim().isEmpty) return false;
+    for (final s in _stops) {
+      if (s.controller.text.trim().isEmpty) return false;
+    }
+    return true;
+  }
+
+  void _insertStopAt(int stopIndex) {
+    // guard: add stop only when pickup has data AND every existing white card has data
+    if (!_hasPickup) {
+      _showSnackBar("Please enter Pick-Up first.");
+      return;
+    }
+    // allow inserting even if destination empty? You asked to require “live white containers” have data.
+    // So require all current filled:
+    final allFilledNow = fromController.text.trim().isNotEmpty &&
+        toController.text.trim().isNotEmpty &&
+        _stops.every((s) => s.controller.text.trim().isNotEmpty);
+
+    if (!allFilledNow) {
+      _showSnackBar("Please fill all existing locations before adding a stop.");
+      return;
+    }
+
+    setState(() {
+      _stops.insert(stopIndex, _StopItem());
+    });
+    _syncViaStopsToFirestore();
+  }
+
+  void _removeStopAt(int index) {
+    setState(() {
+      final s = _stops.removeAt(index);
+      s.controller.dispose();
+    });
+    _syncViaStopsToFirestore();
+  }
+
+  void _onStopEdited(int index) {
+    final text = _stops[index].controller.text.trim();
+    setState(() {
+      _stops[index].isPending = text.isEmpty;
+    });
+    _syncViaStopsToFirestore();
+  }
+
+  void _onPickupEdited() {
+    setState(() {});
+  }
+
+  void _onDropEdited() {
+    setState(() {});
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // BUILD
+  // ─────────────────────────────────────────────────────────────────────────────
+  @override
+  Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    final width = size.width;
+    final height = size.height;
+
+    final railTopH = height * .04;
+    final railBottomH = height * .0375;
+    // final cardH = width * .125;
+
+    Widget railSegment({required double h, bool show = true}) {
+      return Padding(
+        padding: EdgeInsets.only(left: width * 0.02),
+        child: show
+            ? DottedBorder(
+                color: Colors.black54,
+                strokeWidth: width * .0025,
+                dashPattern: const [4, 3],
+                strokeCap: StrokeCap.round,
+                padding: EdgeInsets.zero,
+                customPath: (size) => Path()
+                  ..moveTo(0, 0)
+                  ..lineTo(0, size.height),
+                child: SizedBox(height: h),
+              )
+            : SizedBox(height: h),
+      );
+    }
+
+    Widget dot({required Color color}) {
+      return Container(
+        width: width * 0.04,
+        height: width * 0.04,
+        decoration: BoxDecoration(
+          border: Border.all(
+            width: width * .005,
+            color: Colors.black.withOpacity(.25),
+          ),
+          color: color,
+          shape: BoxShape.circle,
+        ),
+        child: Center(
+          child: Container(
+            width: width * 0.02,
+            height: width * 0.02,
+            decoration: BoxDecoration(
+              color: Colors.black.withOpacity(0.5),
+              shape: BoxShape.circle,
+            ),
+          ),
+        ),
+      );
+    }
+
+    Widget addStopStrip({required int insertAtIndex}) {
+      // visible only if pickup has value
+      if (!_hasPickup) return const SizedBox.shrink();
+      return Row(
+        children: [
+          railSegment(h: height * .0375, show: true),
+          SizedBox(
+            width: width * .1,
+          ),
+          GestureDetector(
+            onTap: () => _insertStopAt(insertAtIndex),
+            child: Container(
+              height: height * .03,
+              padding: EdgeInsets.symmetric(horizontal: width * .02),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(width * .0125),
+                border: Border.all(color: Colors.black45),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.add,
+                    size: width * .05,
+                    color: Colors.black38,
+                  ),
+                  Text(
+                    "Add Stop",
+                    style: TextStyle(
+                      color: Colors.black38,
+                      fontSize: width * .035,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
+    Widget pickupTile() {
+      return Container(
+        decoration:
+            BoxDecoration(border: Border.all(color: Colors.transparent)),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // left rail + green dot
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                railSegment(h: railTopH, show: true),
+                dot(color: Colors.green),
+                railSegment(h: railBottomH, show: true),
+              ],
+            ),
+            SizedBox(width: width * .02),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text("Enter PickUp Details",
+                      style: TextStyle(
+                          fontWeight: FontWeight.w500, fontSize: width * .035)),
+                  GestureDetector(
+                    onTap: () async {
+                      await Navigator.push(
+                        context,
+                        CupertinoPageRoute(
+                          builder: (_) => D2dPlaceSearchPage(
+                            controller: fromController,
+                            accentColor: Colors.green,
+                            label: "Pickup",
+                          ),
+                        ),
+                      );
+                      _onPickupEdited();
+                    },
+                    child: Container(
+                      height: width * .125,
+                      padding: EdgeInsets.only(left: width * 0.03),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(width * 0.03),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              fromController.text.isEmpty
+                                  ? "Enter PickUp location"
+                                  : fromController.text,
+                              style: TextStyle(
+                                color: fromController.text.isEmpty
+                                    ? Colors.black.withOpacity(.5)
+                                    : Colors.black,
+                                fontSize: width * 0.035,
+                              ),
+                            ),
+                          ),
+                          Padding(
+                            padding: EdgeInsets.all(width * .01),
+                            child: GestureDetector(
+                              onTap: () =>
+                                  openRequestLocationSheet(context, "pickup"),
+                              child: Container(
+                                height: double.infinity,
+                                width: width * .225,
+                                decoration: BoxDecoration(
+                                  color:
+                                      ColorConstant.greenColor.withOpacity(.9),
+                                  borderRadius:
+                                      BorderRadius.circular(width * 0.02),
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    "Request\nLocation",
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontSize: width * .03,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  if (fromController.text.isNotEmpty)
+                    Text(
+                      fromController.text,
+                      style: TextStyle(
+                        fontSize: width * .025,
+                        color: Colors.black.withOpacity(.5),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    Widget viaTile({
+      required int index,
+      required _StopItem item,
+    }) {
+      // grey dot if pending/empty
+      final bool showDelete = _stops.length > 0; // allow delete when any exists
+      final dotColor = item.isPending ? Colors.grey : Colors.grey.shade700;
+
+      return Container(
+        // height: height * .1,
+        // decoration: BoxDecoration(border: Border.all()),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            // left rail + grey dot
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                railSegment(h: height * .02, show: true),
+                dot(color: dotColor),
+                railSegment(h: height * .02, show: true),
+              ],
+            ),
+            SizedBox(width: width * .02),
+            GestureDetector(
+              onTap: () async {
+                await Navigator.push(
+                  context,
+                  CupertinoPageRoute(
+                    builder: (_) => D2dPlaceSearchPage(
+                      controller: item.controller,
+                      accentColor: Colors.grey,
+                      label: "Stop ${index + 1}",
+                    ),
+                  ),
+                );
+                _onStopEdited(index);
+              },
+              child: Container(
+                width: width * .75,
+                height: width * .125,
+                padding:
+                    EdgeInsets.only(left: width * 0.03, right: width * .01),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(width * 0.03),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        item.controller.text.isEmpty
+                            ? "Enter Stop ${index + 1}"
+                            : item.controller.text,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: item.controller.text.isEmpty
+                              ? Colors.black.withOpacity(.5)
+                              : Colors.black,
+                          fontSize: width * 0.035,
+                        ),
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: () => openRequestLocationSheet(context, "via"),
+                      child: Padding(
+                        padding: EdgeInsets.all(width * .01),
+                        child: Container(
+                          height: double.infinity,
+                          width: width * .2,
+                          decoration: BoxDecoration(
+                            color: ColorConstant.greenColor.withOpacity(.9),
+                            borderRadius: BorderRadius.circular(width * 0.02),
+                          ),
+                          child: Center(
+                            child: Text(
+                              "Request\nLocation",
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: width * .03,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            if (showDelete)
+              Padding(
+                padding: EdgeInsets.only(left: width * .025),
+                child: GestureDetector(
+                  onTap: () => _removeStopAt(index),
+                  child: Container(
+                    height: width * .125,
+                    width: width * .1125,
+                    decoration: BoxDecoration(
+                      color: Colors.redAccent.withOpacity(.12),
+                      borderRadius: BorderRadius.circular(width * .02),
+                      border: Border.all(
+                        color: Colors.redAccent.withOpacity(.4),
+                        width: width * .002,
+                      ),
+                    ),
+                    child: Icon(
+                      Icons.delete_outline,
+                      size: width * .06,
+                      color: Colors.redAccent,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      );
+    }
+
+    Widget destinationTile() {
+      return Container(
+        decoration:
+            BoxDecoration(border: Border.all(color: Colors.transparent)),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // left rail + red dot
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                railSegment(h: railTopH, show: true),
+                dot(color: Colors.redAccent.shade200),
+                railSegment(h: railBottomH, show: true),
+              ],
+            ),
+            SizedBox(width: width * .02),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text("Enter Destination Details",
+                      style: TextStyle(
+                          fontWeight: FontWeight.w500, fontSize: width * .035)),
+                  GestureDetector(
+                    onTap: () async {
+                      await Navigator.push(
+                        context,
+                        CupertinoPageRoute(
+                          builder: (_) => D2dPlaceSearchPage(
+                            controller: toController,
+                            accentColor: Colors.redAccent,
+                            label: "Drop",
+                          ),
+                        ),
+                      );
+                      _onDropEdited();
+                    },
+                    child: Container(
+                      height: width * .125,
+                      padding: EdgeInsets.only(left: width * 0.03),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(width * 0.03),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              toController.text.isEmpty
+                                  ? "Enter Destination location"
+                                  : toController.text,
+                              style: TextStyle(
+                                color: toController.text.isEmpty
+                                    ? Colors.black.withOpacity(.5)
+                                    : Colors.black,
+                                fontSize: width * 0.035,
+                              ),
+                            ),
+                          ),
+                          Padding(
+                            padding: EdgeInsets.all(width * .01),
+                            child: GestureDetector(
+                              onTap: () =>
+                                  openRequestLocationSheet(context, "drop"),
+                              child: Container(
+                                height: double.infinity,
+                                width: width * .225,
+                                decoration: BoxDecoration(
+                                  color:
+                                      ColorConstant.greenColor.withOpacity(.9),
+                                  borderRadius:
+                                      BorderRadius.circular(width * 0.02),
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    "Request\nLocation",
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontSize: width * .03,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  if (toController.text.isNotEmpty)
+                    Text(
+                      toController.text,
+                      style: TextStyle(
+                        fontSize: width * .025,
+                        color: Colors.black.withOpacity(.5),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // PAGE
+    // ─────────────────────────────────────────────────────────────────────────
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: Container(
+        color: ColorConstant.color1.withOpacity(.15),
+        child: SafeArea(
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: width * .02),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  SizedBox(height: width * .1),
+                  // Top info
+                  Container(
+                    width: width * .75,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(width * .025),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black12,
+                          blurRadius: width * .02,
+                          offset: Offset(width * .01, width * .0125),
+                        )
+                      ],
+                    ),
+                    child: Padding(
+                      padding: EdgeInsets.all(width * .02),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text("How to use ?",
+                              style: TextStyle(
+                                  fontSize: width * .03,
+                                  fontWeight: FontWeight.w500)),
+                          Text(
+                            'Tap fields to search/select. "Add Stop" inserts a via stop between the rows. '
+                            'Use "Request Location" to generate a share link.',
+                            style: TextStyle(fontSize: width * .0275),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  SizedBox(height: width * .08),
+
+                  // PICKUP
+                  pickupTile(),
+
+                  // BETWEEN PICKUP and FIRST ITEM (if any): Add Stop
+                  addStopStrip(insertAtIndex: 0),
+
+                  // VIA STOPS (each followed by an Add Stop strip)
+                  for (int i = 0; i < _stops.length; i++) ...[
+                    viaTile(index: i, item: _stops[i]),
+                    addStopStrip(insertAtIndex: i + 1),
+                  ],
+
+                  // DESTINATION (only show after pickup text exists)
+                  if (_hasPickup) destinationTile(),
+
+                  SizedBox(height: width * .1),
+
+                  // NEXT
+                  GestureDetector(
+                    onTap: () {
+                      if (fromController.text.trim().isEmpty) {
+                        _showSnackBar("Please enter Pick-Up location.");
+                        return;
+                      }
+                      if (toController.text.trim().isEmpty) {
+                        _showSnackBar("Please enter Destination location.");
+                        return;
+                      }
+                      if (_stops.any((s) => s.controller.text.trim().isEmpty)) {
+                        _showSnackBar(
+                            "Please fill all stops or remove empty ones.");
+                        return;
+                      }
+                      Navigator.push(
+                        context,
+                        CupertinoPageRoute(
+                          builder: (_) => D2Dpage02(
+                            pickupLocation: fromController.text.trim(),
+                            dropLocation: toController.text.trim(),
+                          ),
+                        ),
+                      );
+                    },
+                    child: Container(
+                      width: width * .4,
+                      padding: EdgeInsets.symmetric(vertical: width * .025),
+                      decoration: BoxDecoration(
+                        color: Colors.blue,
+                        borderRadius: BorderRadius.circular(width * .025),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black26,
+                            blurRadius: width * .02,
+                            offset: Offset(width * .01, width * .0125),
+                          ),
+                        ],
+                      ),
+                      child: Center(
+                        child: Text(
+                          "Next",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: width * .04,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  SizedBox(height: width * .5),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}

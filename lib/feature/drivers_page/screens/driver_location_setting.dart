@@ -3,7 +3,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter_google_places_hoc081098/google_maps_webservice_places.dart'
-as gmws;
+    as gmws;
 import 'package:google_api_headers/google_api_headers.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
@@ -17,7 +17,7 @@ class DriverLocationSetting extends StatefulWidget {
 }
 
 class _DriverLocationSettingState extends State<DriverLocationSetting> {
-  final String googleApiKey = "AIzaSyD1fU_UDudvvy1HEPEoJ4Ify_YOYDlhdEY";
+  final String googleApiKey = "AIzaSyDwD1BJXVxky_Cy6xzyQh_5A2PW9cTOO0I";
 
   GoogleMapController? mapController;
   late TextEditingController _searchCtrl;
@@ -264,15 +264,15 @@ class _DriverLocationSettingState extends State<DriverLocationSetting> {
                           suffixIcon: _searchCtrl.text.isEmpty
                               ? null
                               : IconButton(
-                            icon: Icon(Icons.close, size: iconSize),
-                            onPressed: () {
-                              setState(() {
-                                _searchCtrl.clear();
-                                _results = [];
-                                _error = null;
-                              });
-                            },
-                          ),
+                                  icon: Icon(Icons.close, size: iconSize),
+                                  onPressed: () {
+                                    setState(() {
+                                      _searchCtrl.clear();
+                                      _results = [];
+                                      _error = null;
+                                    });
+                                  },
+                                ),
                           border: InputBorder.none,
                         ),
                       ),

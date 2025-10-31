@@ -1,0 +1,3166 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:drivex/core/constants/localVariables.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:geocoding/geocoding.dart';
+import 'package:flutter_typeahead/flutter_typeahead.dart'; // ⬅️ v5.2.0 API
+
+class Addressbookpage extends StatefulWidget {
+  const Addressbookpage({super.key});
+  @override
+  State<Addressbookpage> createState() => _AddressbookpageState();
+}
+
+class _AddressbookpageState extends State<Addressbookpage> {
+  User? get _user => FirebaseAuth.instance.currentUser;
+
+  CollectionReference<Map<String, dynamic>> get _col =>
+      FirebaseFirestore.instance
+          .collection('users')
+          .doc(_user!.uid)
+          .collection('saved_addresses');
+
+  @override
+  Widget build(BuildContext context) {
+    if (_user == null) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Saved Addresses')),
+        body: Center(
+          child: Text(
+            'Please sign in to view saved addresses',
+            style: TextStyle(fontSize: width * .04),
+          ),
+        ),
+      );
+    }
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('Saved Addresses')),
+      floatingActionButton: SizedBox(
+        height: width * .15,
+        child: FloatingActionButton.extended(
+          onPressed: () => _openAddressForm(context),
+          icon: Icon(Icons.add, size: width * .065),
+          label: Text('Add Address', style: TextStyle(fontSize: width * .038)),
+        ),
+      ),
+      body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+        stream: _col.orderBy('updatedAt', descending: true).snapshots(),
+        builder: (context, snap) {
+          if (snap.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snap.hasError) {
+            return Center(
+              child: Text('Error: ${snap.error}',
+                  style: TextStyle(fontSize: width * .038)),
+            );
+          }
+          final docs = snap.data?.docs ?? [];
+          if (docs.isEmpty) {
+            return _EmptyState(
+                onAdd: () => _openAddressForm(context), w: width);
+          }
+
+          return ListView.separated(
+            padding: EdgeInsets.fromLTRB(
+                width * .04, width * .04, width * .04, width * .25),
+            itemCount: docs.length,
+            separatorBuilder: (_, __) => SizedBox(height: width * .03),
+            itemBuilder: (context, i) {
+              final d = docs[i].data();
+              final id = docs[i].id;
+              final type = (d['type'] ?? 'other') as String;
+              final label = (d['label'] ?? _prettyType(type)) as String;
+              final address = (d['address'] ?? '') as String;
+
+              return _AddressCard(
+                w: width,
+                type: type,
+                label: label,
+                address: address,
+                onTap: () {},
+                onEdit: () => _openAddressForm(context, docId: id, initial: d),
+                onDelete: () => _confirmDelete(context, id),
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+
+  Future<void> _confirmDelete(BuildContext context, String docId) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete address?'),
+        content:
+            const Text('This address will be removed from your saved list.'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancel')),
+          FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Delete')),
+        ],
+      ),
+    );
+    if (ok == true) {
+      await _col.doc(docId).delete();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Address deleted')));
+    }
+  }
+
+  /// Add/Edit bottom sheet
+  Future<void> _openAddressForm(BuildContext context,
+      {String? docId, Map<String, dynamic>? initial}) async {
+    final formKey = GlobalKey<FormState>();
+    final type = ValueNotifier<String>((initial?['type'] ?? 'other') as String);
+    final labelCtrl =
+        TextEditingController(text: (initial?['label'] ?? '') as String);
+
+    // New granular address controllers
+    final countryCtrl =
+        TextEditingController(text: (initial?['country'] ?? '') as String);
+    final stateCtrl =
+        TextEditingController(text: (initial?['state'] ?? '') as String);
+    final districtCtrl =
+        TextEditingController(text: (initial?['district'] ?? '') as String);
+    final localityCtrl =
+        TextEditingController(text: (initial?['locality'] ?? '') as String);
+    final postalCtrl =
+        TextEditingController(text: (initial?['postalCode'] ?? '') as String);
+
+    final phoneCtrl =
+        TextEditingController(text: (initial?['phone'] ?? '') as String);
+    final nameCtrl =
+        TextEditingController(text: (initial?['name'] ?? '') as String);
+    final noteCtrl =
+        TextEditingController(text: (initial?['note'] ?? '') as String);
+
+    // If adding and label is empty, prefill from type
+    if ((docId == null) && labelCtrl.text.trim().isEmpty) {
+      labelCtrl.text = _prettyType(type.value);
+    }
+
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      showDragHandle: true,
+      backgroundColor: Colors.white,
+      builder: (ctx) {
+        final insets = MediaQuery.of(ctx).viewInsets.bottom;
+        final inputH = width * .095; // compact height
+        final locating = ValueNotifier(false);
+
+        // Tiny in-app "datasets" for suggestions – replace with your lists
+        const kCountries = <String>[
+          'India',
+          'United States',
+          'United Kingdom',
+          'United Arab Emirates'
+        ];
+        const kStates = <String>[
+          'Kerala',
+          'Karnataka',
+          'Tamil Nadu',
+          'Maharashtra',
+          'Delhi',
+          'Gujarat'
+        ];
+        const kDistricts = <String>[
+          'Ernakulam',
+          'Thiruvananthapuram',
+          'Bengaluru Urban',
+          'Mumbai Suburban',
+          'Chennai',
+          'Ahmedabad'
+        ];
+        const kLocalities = <String>[
+          'Kakkanad',
+          'Aluva',
+          'Koramangala',
+          'Andheri',
+          'T Nagar',
+          'Satellite'
+        ];
+
+        // Helpers
+        InputDecoration _dec(String label, String hint) => InputDecoration(
+              isDense: true,
+              labelText: label,
+              labelStyle: TextStyle(fontSize: width * .034),
+              hintText: hint,
+              hintStyle:
+                  TextStyle(fontSize: width * .033, color: Colors.black45),
+              contentPadding: EdgeInsets.symmetric(
+                horizontal: width * .03,
+                vertical: width * .022,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(width * .03),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(width * .03),
+                borderSide: BorderSide(
+                    color: const Color(0xFFDFE3EA), width: width * .003),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(width * .03),
+                borderSide: BorderSide(
+                    color: const Color(0xFF2F6BFF), width: width * .004),
+              ),
+            );
+
+        Widget _taField({
+          required TextEditingController controller,
+          required String label,
+          required List<String> data,
+          String hint = '',
+          String? Function(String?)? validator,
+        }) {
+          // ⚠️ v5.2.0 TypeAheadField API with builder + onSelected
+          return SizedBox(
+            height: inputH,
+            child: TypeAheadField<String>(
+              controller: controller, // you can also omit and rely on builder
+              suggestionsCallback: (pattern) async {
+                final q = pattern.trim().toLowerCase();
+                if (q.isEmpty) return const <String>[];
+                return data
+                    .where((e) => e.toLowerCase().contains(q))
+                    .take(12)
+                    .toList();
+              },
+              // how each suggestion row looks
+              itemBuilder: (context, String suggestion) => ListTile(
+                dense: true,
+                title: Text(suggestion),
+              ),
+              onSelected: (String suggestion) {
+                controller.text = suggestion;
+              },
+              // build the actual field (IMPORTANT: use the provided controller/focusNode)
+              builder: (context, textCtrl, focusNode) => TextFormField(
+                controller: textCtrl,
+                focusNode: focusNode,
+                validator: validator,
+                textAlignVertical: TextAlignVertical.center,
+                style: TextStyle(fontSize: width * .035),
+                decoration: _dec(label, hint),
+              ),
+            ),
+          );
+        }
+
+        Future<void> _fillWithCurrentLocation() async {
+          locating.value = true;
+          try {
+            if (!await Geolocator.isLocationServiceEnabled()) {
+              throw Exception('Location services are disabled');
+            }
+            var perm = await Geolocator.checkPermission();
+            if (perm == LocationPermission.denied) {
+              perm = await Geolocator.requestPermission();
+            }
+            if (perm == LocationPermission.denied ||
+                perm == LocationPermission.deniedForever) {
+              throw Exception('Location permission denied');
+            }
+
+            final pos = await Geolocator.getCurrentPosition(
+                desiredAccuracy: LocationAccuracy.high);
+            final pm =
+                await placemarkFromCoordinates(pos.latitude, pos.longitude);
+
+            if (pm.isNotEmpty) {
+              final p = pm.first;
+              countryCtrl.text = p.country ?? '';
+              stateCtrl.text = p.administrativeArea ?? '';
+              districtCtrl.text = p.subAdministrativeArea ?? '';
+              // Prefer locality over subLocality for city/town name; fallback chain
+              localityCtrl.text = p.locality?.isNotEmpty == true
+                  ? p.locality!
+                  : (p.subLocality ?? '');
+              postalCtrl.text = p.postalCode ?? '';
+            }
+          } catch (e) {
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Unable to fetch location: $e')),
+              );
+            }
+          } finally {
+            locating.value = false;
+          }
+        }
+
+        return Padding(
+          padding: EdgeInsets.fromLTRB(
+              width * .04, 0, width * .04, insets + width * .035),
+          child: Form(
+            key: formKey,
+            child: ListView(
+              shrinkWrap: true,
+              children: [
+                Text(
+                  docId == null ? 'Add Address' : 'Edit Address',
+                  style: TextStyle(
+                      fontSize: width * .048, fontWeight: FontWeight.w700),
+                ),
+
+                SizedBox(height: width * .022),
+                Text('Type',
+                    style: TextStyle(
+                        fontSize: width * .03, color: Colors.black54)),
+                SizedBox(height: width * .010),
+
+                // Chips -> always rewrite label to selected type
+                ValueListenableBuilder<String>(
+                  valueListenable: type,
+                  builder: (_, value, __) => Wrap(
+                    spacing: width * .016,
+                    runSpacing: width * .012,
+                    children: [
+                      _chip('home', value, type, width,
+                          labelController: labelCtrl),
+                      _chip('work', value, type, width,
+                          labelController: labelCtrl),
+                      _chip('other', value, type, width,
+                          labelController: labelCtrl),
+                    ],
+                  ),
+                ),
+
+                SizedBox(height: width * .028),
+                // Label (always editable)
+                SizedBox(
+                  height: width * .095,
+                  child: TextFormField(
+                    controller: labelCtrl,
+                    style: TextStyle(fontSize: width * .035),
+                    decoration: InputDecoration(
+                      isDense: true,
+                      labelText: 'Label (optional)',
+                      hintText: 'Home, Grandma House…',
+                      hintStyle: TextStyle(
+                          fontSize: width * .033, color: Colors.black45),
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: width * .03,
+                        vertical: width * .022,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(width * .03),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(width * .03),
+                        borderSide: BorderSide(
+                            color: const Color(0xFFDFE3EA),
+                            width: width * .003),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(width * .03),
+                        borderSide: BorderSide(
+                            color: const Color(0xFF2F6BFF),
+                            width: width * .004),
+                      ),
+                    ),
+                  ),
+                ),
+
+                SizedBox(height: width * .02),
+
+                // Address parts + "current location" button
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Left column (fields)
+                    Expanded(
+                      child: Column(
+                        children: [
+                          _taField(
+                            controller: countryCtrl,
+                            label: 'Country *',
+                            hint: 'Type country',
+                            data: kCountries,
+                            validator: (v) => (v == null || v.trim().isEmpty)
+                                ? 'Country required'
+                                : null,
+                          ),
+                          SizedBox(height: width * .018),
+                          _taField(
+                            controller: stateCtrl,
+                            label: 'State *',
+                            hint: 'Type state',
+                            data: kStates,
+                            validator: (v) => (v == null || v.trim().isEmpty)
+                                ? 'State required'
+                                : null,
+                          ),
+                          SizedBox(height: width * .018),
+                          _taField(
+                            controller: districtCtrl,
+                            label: 'District',
+                            hint: 'Type district',
+                            data: kDistricts,
+                          ),
+                          SizedBox(height: width * .018),
+                          _taField(
+                            controller: localityCtrl,
+                            label: 'Locality / Area',
+                            hint: 'Type locality',
+                            data: kLocalities,
+                          ),
+                          SizedBox(height: width * .018),
+                          SizedBox(
+                            height: width * .095,
+                            child: TextFormField(
+                              controller: postalCtrl,
+                              keyboardType: TextInputType.number,
+                              style: TextStyle(fontSize: width * .035),
+                              decoration: _dec('Postal code', 'PIN / ZIP'),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    SizedBox(width: width * .016),
+                    // Right small button
+                    ValueListenableBuilder<bool>(
+                      valueListenable: locating,
+                      builder: (_, isLoading, __) => SizedBox(
+                        width: width * .13,
+                        height: width * .13,
+                        child: ElevatedButton(
+                          onPressed:
+                              isLoading ? null : _fillWithCurrentLocation,
+                          style: ElevatedButton.styleFrom(
+                            padding: EdgeInsets.zero,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(width * .03),
+                            ),
+                          ),
+                          child: isLoading
+                              ? SizedBox(
+                                  height: width * .055,
+                                  width: width * .055,
+                                  child: const CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : Icon(Icons.my_location, size: width * .055),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+
+                SizedBox(height: width * .02),
+                SizedBox(
+                  height: width * .095,
+                  child: TextFormField(
+                    controller: nameCtrl,
+                    decoration: _dec('Contact Name (optional)', 'Contact name'),
+                    style: TextStyle(fontSize: width * .035),
+                  ),
+                ),
+                SizedBox(height: width * .02),
+                SizedBox(
+                  height: width * .095,
+                  child: TextFormField(
+                    controller: phoneCtrl,
+                    keyboardType: TextInputType.phone,
+                    decoration:
+                        _dec('Contact Phone (optional)', 'Contact phone'),
+                    style: TextStyle(fontSize: width * .035),
+                  ),
+                ),
+                SizedBox(height: width * .02),
+                SizedBox(
+                  // allow multi-line note
+                  child: TextFormField(
+                    controller: noteCtrl,
+                    maxLines: 3,
+                    decoration: _dec('Note (optional)', 'Door code, landmark…'),
+                    style: TextStyle(fontSize: width * .035),
+                  ),
+                ),
+
+                SizedBox(height: width * .03),
+                SizedBox(
+                  height: width * .12,
+                  child: FilledButton(
+                    onPressed: () async {
+                      if (!formKey.currentState!.validate()) return;
+
+                      // Compose a readable address from parts
+                      final parts = <String>[
+                        if (localityCtrl.text.trim().isNotEmpty)
+                          localityCtrl.text.trim(),
+                        if (districtCtrl.text.trim().isNotEmpty)
+                          districtCtrl.text.trim(),
+                        if (stateCtrl.text.trim().isNotEmpty)
+                          stateCtrl.text.trim(),
+                        if (countryCtrl.text.trim().isNotEmpty)
+                          countryCtrl.text.trim(),
+                        if (postalCtrl.text.trim().isNotEmpty)
+                          postalCtrl.text.trim(),
+                      ];
+                      final composedAddress = parts.join(', ');
+
+                      final now = FieldValue.serverTimestamp();
+                      final data = <String, dynamic>{
+                        'type': type.value,
+                        'label': (labelCtrl.text.trim().isEmpty)
+                            ? _prettyType(type.value)
+                            : labelCtrl.text.trim(),
+                        'address': composedAddress,
+                        'country': countryCtrl.text.trim(),
+                        'state': stateCtrl.text.trim(),
+                        'district': districtCtrl.text.trim(),
+                        'locality': localityCtrl.text.trim(),
+                        'postalCode': postalCtrl.text.trim(),
+                        'name': nameCtrl.text.trim(),
+                        'phone': phoneCtrl.text.trim(),
+                        'note': noteCtrl.text.trim(),
+                        'updatedAt': now,
+                        if (docId == null) 'createdAt': now,
+                      };
+
+                      if (docId == null) {
+                        await _col.add(data);
+                        if (!context.mounted) return;
+                        Navigator.pop(ctx);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Address saved')),
+                        );
+                      } else {
+                        await _col
+                            .doc(docId)
+                            .set(data, SetOptions(merge: true));
+                        if (!context.mounted) return;
+                        Navigator.pop(ctx);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Address updated')),
+                        );
+                      }
+                    },
+                    child: Text(
+                      docId == null ? 'Save Address' : 'Update Address',
+                      style: TextStyle(
+                          fontSize: width * .038, fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  String _prettyType(String t) {
+    switch (t) {
+      case 'home':
+        return 'Home';
+      case 'work':
+        return 'Work';
+      default:
+        return 'Other';
+    }
+  }
+
+  // ——— Emoji chips with green outline (no tick) ———
+  static const Map<String, String> _chipEmoji = {
+    'home': '🏠',
+    'work': '🏢',
+    'other': '📍',
+  };
+  static const Color kChipGreen = Color(0xFF22A45D);
+
+  Widget _chip(
+    String value,
+    String current,
+    ValueNotifier<String> controller,
+    double w, {
+    TextEditingController? labelController,
+  }) {
+    final selected = value == current;
+
+    return ChoiceChip(
+      selected: selected,
+      onSelected: (_) {
+        controller.value = value;
+        if (labelController != null) {
+          labelController
+            ..text = _prettyType(value)
+            ..selection = TextSelection.fromPosition(
+              TextPosition(offset: labelController.text.length),
+            );
+        }
+      },
+      showCheckmark: false,
+      avatar: Text(
+        _chipEmoji[value] ?? '📍',
+        style: TextStyle(fontSize: width * .035), // small emoji
+      ),
+      label: Text(
+        _prettyType(value),
+        style: TextStyle(
+          fontSize: width * .032,
+          fontWeight: FontWeight.w600,
+          color: selected ? kChipGreen : Colors.black87,
+        ),
+      ),
+      backgroundColor: Colors.grey.shade100,
+      selectedColor: kChipGreen.withOpacity(.10),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(width * .03),
+        side: BorderSide(
+          color: selected ? kChipGreen : Colors.grey.shade300,
+          width: selected ? width * .006 : width * .003,
+        ),
+      ),
+      labelPadding:
+          EdgeInsets.symmetric(horizontal: width * .02, vertical: width * .008),
+      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      visualDensity: const VisualDensity(horizontal: -2, vertical: -2),
+    );
+  }
+}
+
+/// Empty state
+class _EmptyState extends StatelessWidget {
+  const _EmptyState({required this.onAdd, required this.w});
+  final VoidCallback onAdd;
+  final double w;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: width * .08),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.location_off_outlined,
+                size: width * .18, color: Colors.black38),
+            SizedBox(height: width * .03),
+            Text('No saved addresses',
+                style: TextStyle(
+                    fontSize: width * .045, fontWeight: FontWeight.w700)),
+            SizedBox(height: width * .015),
+            Text(
+              'Add your frequently used locations to pick them quickly while booking.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: width * .035, color: Colors.black54),
+            ),
+            SizedBox(height: width * .04),
+            SizedBox(
+              height: width * .12,
+              child: OutlinedButton.icon(
+                onPressed: onAdd,
+                icon: Icon(Icons.add, size: width * .06),
+                label: Text('Add Address',
+                    style: TextStyle(fontSize: width * .04)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Address tile – uses emojis instead of Material icons
+class _AddressCard extends StatelessWidget {
+  const _AddressCard({
+    required this.w,
+    required this.type,
+    required this.label,
+    required this.address,
+    this.onTap,
+    this.onEdit,
+    this.onDelete,
+  });
+
+  final double w;
+  final String type;
+  final String label;
+  final String address;
+  final VoidCallback? onTap;
+  final VoidCallback? onEdit;
+  final VoidCallback? onDelete;
+
+  String get _emoji {
+    switch (type) {
+      case 'home':
+        return '🏠';
+      case 'work':
+        return '🏢';
+      default:
+        return '📍';
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      elevation: 2,
+      shadowColor: Colors.black12,
+      borderRadius: BorderRadius.circular(width * .04),
+      color: Colors.white,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(width * .04),
+        onTap: onTap,
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(
+              width * .035, width * .03, width * .02, width * .03),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              CircleAvatar(
+                radius: width * .06,
+                backgroundColor: Colors.grey.shade100,
+                child: Text(_emoji, style: TextStyle(fontSize: width * .045)),
+              ),
+              SizedBox(width: width * .03),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(label,
+                        style: TextStyle(
+                            fontSize: width * .042,
+                            fontWeight: FontWeight.w700)),
+                    SizedBox(height: width * .01),
+                    Text(
+                      address,
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                          color: Colors.grey.shade700, fontSize: width * .035),
+                    ),
+                  ],
+                ),
+              ),
+              PopupMenuButton<String>(
+                onSelected: (v) {
+                  if (v == 'edit') onEdit?.call();
+                  if (v == 'delete') onDelete?.call();
+                },
+                itemBuilder: (_) => const [
+                  PopupMenuItem(value: 'edit', child: Text('Edit')),
+                  PopupMenuItem(value: 'delete', child: Text('Delete')),
+                ],
+                icon: Icon(Icons.more_vert, size: width * .06),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+
+
+------------------------------v2-------------------------------
+
+
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:drivex/core/constants/localVariables.dart';
+import 'package:drivex/main.dart'; // AppFire.gServiceDb
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:geocoding/geocoding.dart';
+import 'package:flutter_typeahead/flutter_typeahead.dart'; // ^5.2.0
+
+class Addressbookpage extends StatefulWidget {
+  const Addressbookpage({super.key});
+  @override
+  State<Addressbookpage> createState() => _AddressbookpageState();
+}
+
+class _AddressbookpageState extends State<Addressbookpage> {
+  User? get _user => FirebaseAuth.instance.currentUser;
+
+  // Primary (drivex) – user addresses
+  CollectionReference<Map<String, dynamic>> get _col =>
+      FirebaseFirestore.instance
+          .collection('users')
+          .doc(_user!.uid)
+          .collection('saved_addresses');
+
+  // Secondary (g-service) – places_cache
+  FirebaseFirestore get _gsvc => AppFire.gServiceDb;
+
+  // --- in-memory cache to reduce Firestore reads for remote suggestions ---
+  final Map<String, _SuggCacheEntry> _suggCache = {};
+  static const Duration _cacheTtl = Duration(minutes: 10);
+
+  @override
+  Widget build(BuildContext context) {
+    if (_user == null) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Saved Addresses')),
+        body: Center(
+          child: Text(
+            'Please sign in to view saved addresses',
+            style: TextStyle(fontSize: width * .04),
+          ),
+        ),
+      );
+    }
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('Saved Addresses')),
+      floatingActionButton: SizedBox(
+        height: width * .15,
+        child: FloatingActionButton.extended(
+          onPressed: () => _openAddressForm(context),
+          icon: Icon(Icons.add, size: width * .065),
+          label: Text('Add Address', style: TextStyle(fontSize: width * .038)),
+        ),
+      ),
+      body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+        stream: _col.orderBy('updatedAt', descending: true).snapshots(),
+        builder: (context, snap) {
+          if (snap.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snap.hasError) {
+            return Center(
+              child: Text('Error: ${snap.error}',
+                  style: TextStyle(fontSize: width * .038)),
+            );
+          }
+          final docs = snap.data?.docs ?? [];
+          if (docs.isEmpty) {
+            return _EmptyState(
+                onAdd: () => _openAddressForm(context), w: width);
+          }
+
+          return ListView.separated(
+            padding: EdgeInsets.fromLTRB(
+                width * .04, width * .04, width * .04, width * .25),
+            itemCount: docs.length,
+            separatorBuilder: (_, __) => SizedBox(height: width * .03),
+            itemBuilder: (context, i) {
+              final d = docs[i].data();
+              final id = docs[i].id;
+              final type = (d['type'] ?? 'other') as String;
+              final label = (d['label'] ?? _prettyType(type)) as String;
+              final address = (d['address'] ?? '') as String;
+
+              return _AddressCard(
+                w: width,
+                type: type,
+                label: label,
+                address: address,
+                onTap: () {},
+                onEdit: () => _openAddressForm(context, docId: id, initial: d),
+                onDelete: () => _confirmDelete(context, id),
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+
+  Future<void> _confirmDelete(BuildContext context, String docId) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete address?'),
+        content:
+            const Text('This address will be removed from your saved list.'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancel')),
+          FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Delete')),
+        ],
+      ),
+    );
+    if (ok == true) {
+      await _col.doc(docId).delete();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Address deleted')));
+    }
+  }
+
+  // ---------- LOCAL: States list (India) ----------
+  static const List<String> kIndiaStates = [
+    // States (28)
+    'Andhra Pradesh',
+    'Arunachal Pradesh',
+    'Assam',
+    'Bihar',
+    'Chhattisgarh',
+    'Goa',
+    'Gujarat',
+    'Haryana',
+    'Himachal Pradesh',
+    'Jharkhand',
+    'Karnataka',
+    'Kerala',
+    'Madhya Pradesh',
+    'Maharashtra',
+    'Manipur',
+    'Meghalaya',
+    'Mizoram',
+    'Nagaland',
+    'Odisha',
+    'Punjab',
+    'Rajasthan',
+    'Sikkim',
+    'Tamil Nadu',
+    'Telangana',
+    'Tripura',
+    'Uttar Pradesh',
+    'Uttarakhand',
+    'West Bengal',
+    // Union Territories (8)
+    'Andaman and Nicobar Islands',
+    'Chandigarh',
+    'Dadra and Nagar Haveli and Daman and Diu',
+    'Delhi',
+    'Jammu and Kashmir',
+    'Ladakh',
+    'Lakshadweep',
+    'Puducherry',
+  ];
+
+  // ---------- LOCAL: Kerala districts ----------
+  static const List<String> kKeralaDistricts = [
+    'Thiruvananthapuram',
+    'Kollam',
+    'Pathanamthitta',
+    'Alappuzha',
+    'Kottayam',
+    'Idukki',
+    'Ernakulam',
+    'Thrissur',
+    'Palakkad',
+    'Malappuram',
+    'Kozhikode',
+    'Wayanad',
+    'Kannur',
+    'Kasaragod',
+  ];
+
+  // ---------- LOCAL: Kerala sub-districts (Taluks) by district ----------
+  static const Map<String, List<String>> kKeralaTaluks = {
+    'Thiruvananthapuram': [
+      'Thiruvananthapuram',
+      'Chirayinkeezhu',
+      'Neyyattinkara',
+      'Nedumangad',
+      'Varkala',
+      'Kattakada',
+    ],
+    'Kollam': [
+      'Kollam',
+      'Karunagappally',
+      'Kunnathur',
+      'Kottarakkara',
+      'Pathanapuram',
+      'Punalur',
+    ],
+    'Pathanamthitta': [
+      'Adoor',
+      'Konni',
+      'Kozhencherry',
+      'Mallappally',
+      'Ranni',
+      'Thiruvalla',
+    ],
+    'Alappuzha': [
+      'Ambalapuzha',
+      'Cherthala',
+      'Chengannur',
+      'Karthikappally',
+      'Kuttanad',
+      'Mavelikkara',
+    ],
+    'Kottayam': [
+      'Changanassery',
+      'Kanjirappally',
+      'Kottayam',
+      'Meenachil',
+      'Vaikom',
+    ],
+    'Idukki': [
+      'Devikulam',
+      'Idukki',
+      'Peermade',
+      'Thodupuzha',
+      'Udumbanchola',
+    ],
+    'Ernakulam': [
+      'Aluva',
+      'Kanayannur',
+      'Kochi',
+      'Kothamangalam',
+      'Kunnathunad',
+      'Muvattupuzha',
+      'North Paravur',
+    ],
+    'Thrissur': [
+      'Chalakkudy',
+      'Chavakkad',
+      'Kodungallur',
+      'Kunnamkulam',
+      'Mukundapuram',
+      'Thalapilly',
+      'Thrissur',
+    ],
+    'Palakkad': [
+      'Alathur',
+      'Chittur',
+      'Mannarkkad',
+      'Ottappalam',
+      'Palakkad',
+      'Pattambi',
+    ],
+    'Malappuram': [
+      'Ernad',
+      'Kondotty',
+      'Nilambur',
+      'Perinthalmanna',
+      'Ponnani',
+      'Tirur',
+      'Tirurangadi',
+    ],
+    'Kozhikode': [
+      'Koyilandy',
+      'Kozhikode',
+      'Thamarassery',
+      'Vatakara',
+    ],
+    'Wayanad': [
+      'Mananthavady',
+      'Sulthan Bathery',
+      'Vythiri',
+    ],
+    'Kannur': [
+      'Iritty',
+      'Kannur',
+      'Payyannur',
+      'Taliparamba',
+      'Thalassery',
+    ],
+    'Kasaragod': [
+      'Hosdurg',
+      'Kasaragod',
+      'Manjeshwaram',
+      'Vellarikundu',
+    ],
+  };
+
+  // ---------- Firestore helper (distinct + filtered + cached) ----------
+  Future<List<String>> _fetchFromFirestore({
+    required String field, // 'locality' | 'subDistrict'
+    String input = "",
+    String? state,
+    String? subDistrict,
+    String? locality,
+    int limit = 25,
+  }) async {
+    final trimmed = input.trim();
+    final key =
+        'f=$field|s=${(state ?? '').trim()}|d=${(subDistrict ?? '').trim()}|l=${(locality ?? '').trim()}|q=${trimmed.toLowerCase()}';
+
+    // cache
+    final now = DateTime.now();
+    final hit = _suggCache[key];
+    if (hit != null && now.difference(hit.ts) < _cacheTtl) {
+      return hit.values;
+    }
+
+    Query<Map<String, dynamic>> base = _gsvc.collection('places_cache');
+    if (state != null && state.trim().isNotEmpty) {
+      base = base.where('address.state', isEqualTo: state.trim());
+    }
+    if (subDistrict != null && subDistrict.trim().isNotEmpty) {
+      base = base.where('address.subDistrict', isEqualTo: subDistrict.trim());
+    }
+    if (locality != null && locality.trim().isNotEmpty) {
+      base = base.where('address.locality', isEqualTo: locality.trim());
+    }
+
+    Query<Map<String, dynamic>> q = base;
+    if (trimmed.isNotEmpty) {
+      q = q
+          .orderBy('address.$field')
+          .startAt([trimmed]).endAt([trimmed + '\uf8ff']);
+    } else {
+      q = q.orderBy('address.$field');
+    }
+
+    List<String> result;
+    try {
+      final snap = await q.limit(80).get();
+      final set = <String>{};
+      for (final d in snap.docs) {
+        final addr = d.data()['address'];
+        if (addr is Map && addr[field] is String) {
+          final v = (addr[field] as String).trim();
+          if (v.isEmpty) continue;
+          if (trimmed.isEmpty ||
+              v.toLowerCase().startsWith(trimmed.toLowerCase())) {
+            set.add(v);
+            if (set.length >= limit) break;
+          }
+        }
+      }
+      result = set.toList()
+        ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+      result = result.take(limit).toList();
+    } on FirebaseException catch (e) {
+      if (e.code == 'failed-precondition' &&
+          (e.message ?? '').contains('index')) {
+        // fallback (less efficient)
+        final snap = await base.limit(200).get();
+        final set = <String>{};
+        for (final d in snap.docs) {
+          final addr = d.data()['address'];
+          if (addr is Map && addr[field] is String) {
+            final v = (addr[field] as String).trim();
+            if (v.isEmpty) continue;
+            if (trimmed.isEmpty ||
+                v.toLowerCase().startsWith(trimmed.toLowerCase())) {
+              set.add(v);
+              if (set.length >= limit) break;
+            }
+          }
+        }
+        result = set.toList()
+          ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+        result = result.take(limit).toList();
+      } else {
+        rethrow;
+      }
+    }
+
+    _suggCache[key] = _SuggCacheEntry(result, now);
+    return result;
+  }
+
+  /// Unified AREA suggestions:
+  /// - Kerala + district => local taluks
+  /// - Others => merge of Firestore 'locality' and 'subDistrict'
+  Future<List<String>> _fetchAreaSuggestions({
+    required String input,
+    required String state,
+    String? keralaDistrict,
+    int limit = 25,
+  }) async {
+    final q = input.trim();
+    if (state == 'Kerala' && (keralaDistrict ?? '').trim().isNotEmpty) {
+      final list = (kKeralaTaluks[keralaDistrict!.trim()] ?? const []);
+      return _filterLocal(list, q, limit: limit);
+    }
+
+    // Non-Kerala: merge locality + subDistrict
+    final res1 = await _fetchFromFirestore(
+      field: 'locality',
+      input: q,
+      state: state,
+    );
+    // Only fetch subDistrict if we still have room (keeps reads down)
+    List<String> merged = res1;
+    if (res1.length < limit) {
+      final res2 = await _fetchFromFirestore(
+        field: 'subDistrict',
+        input: q,
+        state: state,
+      );
+      final set = {...res1, ...res2};
+      merged = set.toList()
+        ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+    }
+    return merged.take(limit).toList();
+  }
+
+  // local filter helper
+  List<String> _filterLocal(List<String> base, String q, {int limit = 25}) {
+    final qq = q.trim().toLowerCase();
+    final set = <String>{};
+    for (final v in base) {
+      if (qq.isEmpty || v.toLowerCase().startsWith(qq)) {
+        set.add(v);
+        if (set.length >= limit) break;
+      }
+    }
+    final list = set.toList()
+      ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+    return list;
+  }
+
+  /// Add/Edit bottom sheet
+  Future<void> _openAddressForm(BuildContext context,
+      {String? docId, Map<String, dynamic>? initial}) async {
+    final formKey = GlobalKey<FormState>();
+    final type = ValueNotifier<String>((initial?['type'] ?? 'other') as String);
+    final labelCtrl =
+        TextEditingController(text: (initial?['label'] ?? '') as String);
+
+    // Cascading address parts
+    final stateCtrl =
+        TextEditingController(text: (initial?['state'] ?? '') as String);
+
+    // Kerala-specific district (optional, only used for Kerala UI)
+    final districtCtrl =
+        TextEditingController(text: (initial?['district'] ?? '') as String);
+
+    // Unified AREA field (replaces subDistrict/locality/taluk)
+    final areaCtrl =
+        TextEditingController(text: (initial?['area'] ?? '') as String);
+
+    final postalCtrl =
+        TextEditingController(text: (initial?['postalCode'] ?? '') as String);
+
+    final phoneCtrl =
+        TextEditingController(text: (initial?['phone'] ?? '') as String);
+    final nameCtrl =
+        TextEditingController(text: (initial?['name'] ?? '') as String);
+    final noteCtrl =
+        TextEditingController(text: (initial?['note'] ?? '') as String);
+
+    if ((docId == null) && labelCtrl.text.trim().isEmpty) {
+      labelCtrl.text = _prettyType(type.value);
+    }
+
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      showDragHandle: true,
+      backgroundColor: Colors.white,
+      builder: (ctx) {
+        final insets = MediaQuery.of(ctx).viewInsets.bottom;
+        final inputH = width * .095;
+        final locating = ValueNotifier(false);
+
+        InputDecoration _dec(String label, String hint) => InputDecoration(
+              isDense: true,
+              labelText: label,
+              labelStyle: TextStyle(fontSize: width * .034),
+              hintText: hint,
+              hintStyle:
+                  TextStyle(fontSize: width * .033, color: Colors.black45),
+              contentPadding: EdgeInsets.symmetric(
+                  horizontal: width * .03, vertical: width * .022),
+              border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(width * .03)),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(width * .03),
+                borderSide: BorderSide(
+                    color: const Color(0xFFDFE3EA), width: width * .003),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(width * .03),
+                borderSide: BorderSide(
+                    color: const Color(0xFF2F6BFF), width: width * .004),
+              ),
+            );
+
+        bool isKerala() => stateCtrl.text.trim() == 'Kerala';
+
+        // enable/disable logic
+        bool enDistrict() => stateCtrl.text.trim().isNotEmpty && isKerala();
+        bool enArea() =>
+            stateCtrl.text.trim().isNotEmpty &&
+            (!isKerala() || districtCtrl.text.trim().isNotEmpty);
+
+        // clears on parent change
+        void _onStatePicked() {
+          districtCtrl.clear();
+          areaCtrl.clear();
+          setState(() {});
+        }
+
+        void _onDistrictPicked() {
+          areaCtrl.clear();
+          setState(() {});
+        }
+
+        // ---- TypeAhead builders (with Keys to prevent state reuse) ----
+
+        Widget _taLocalField({
+          required Key fieldKey,
+          required TextEditingController controller,
+          required String label,
+          required String hint,
+          required bool enabled,
+          required List<String> Function() source,
+          int minChars = 1,
+          VoidCallback? onPicked,
+        }) {
+          return SizedBox(
+            key: fieldKey, // <- key at wrapper
+            height: inputH,
+            child: AbsorbPointer(
+              absorbing: !enabled,
+              child: Opacity(
+                opacity: enabled ? 1 : 0.55,
+                child: TypeAheadField<String>(
+                  key: fieldKey, // <- key on TypeAheadField too
+                  controller: controller,
+                  hideOnEmpty: true,
+                  debounceDuration: const Duration(milliseconds: 200),
+                  suggestionsCallback: (pattern) async {
+                    final q = pattern.trim();
+                    if (q.length < minChars) return const <String>[];
+                    return _filterLocal(source(), q);
+                  },
+                  itemBuilder: (context, String s) =>
+                      ListTile(dense: true, title: Text(s)),
+                  onSelected: (String s) {
+                    controller.text = s;
+                    onPicked?.call();
+                  },
+                  builder: (context, textCtrl, focusNode) => TextFormField(
+                    key: ValueKey(
+                        '${fieldKey.toString()}_tf'), // distinct TF key
+                    controller: textCtrl,
+                    focusNode: focusNode,
+                    enabled: enabled,
+                    textAlignVertical: TextAlignVertical.center,
+                    style: TextStyle(fontSize: width * .035),
+                    decoration: _dec(label, hint),
+                    onChanged: (_) => setState(() {}),
+                  ),
+                ),
+              ),
+            ),
+          );
+        }
+
+        // Remote (Firestore) TypeAhead for AREA (non-Kerala)
+        Widget _taAreaRemoteField({
+          required Key fieldKey,
+          required TextEditingController controller,
+          required bool enabled,
+          required String state,
+          int minChars = 2,
+        }) {
+          return SizedBox(
+            key: fieldKey,
+            height: inputH,
+            child: AbsorbPointer(
+              absorbing: !enabled,
+              child: Opacity(
+                opacity: enabled ? 1 : 0.55,
+                child: TypeAheadField<String>(
+                  key: fieldKey,
+                  controller: controller,
+                  hideOnEmpty: true,
+                  debounceDuration: const Duration(milliseconds: 300),
+                  suggestionsCallback: (pattern) async {
+                    final q = pattern.trim();
+                    if (q.length < minChars) return const <String>[];
+                    return _fetchAreaSuggestions(
+                      input: q,
+                      state: state,
+                      limit: 25,
+                    );
+                  },
+                  itemBuilder: (context, String s) =>
+                      ListTile(dense: true, title: Text(s)),
+                  onSelected: (String s) {
+                    controller.text = s;
+                  },
+                  builder: (context, textCtrl, focusNode) => TextFormField(
+                    key: ValueKey('${fieldKey.toString()}_tf'),
+                    controller: textCtrl,
+                    focusNode: focusNode,
+                    enabled: enabled,
+                    textAlignVertical: TextAlignVertical.center,
+                    style: TextStyle(fontSize: width * .035),
+                    decoration:
+                        _dec('Area *', 'Locality / Taluk / Sub-district'),
+                    onChanged: (_) => setState(() {}),
+                  ),
+                ),
+              ),
+            ),
+          );
+        }
+
+        // Stable keys for fields (different keys for area-local vs area-remote)
+        final stateKey = const ValueKey('field_state');
+        final districtKey = const ValueKey('field_district');
+        final areaLocalKey = const ValueKey('field_area_local');
+        final areaRemoteKey = const ValueKey('field_area_remote');
+
+        Future<void> _fillWithCurrentLocation() async {
+          locating.value = true;
+          try {
+            if (!await Geolocator.isLocationServiceEnabled()) {
+              throw Exception('Location services are disabled');
+            }
+            var perm = await Geolocator.checkPermission();
+            if (perm == LocationPermission.denied) {
+              perm = await Geolocator.requestPermission();
+            }
+            if (perm == LocationPermission.denied ||
+                perm == LocationPermission.deniedForever) {
+              throw Exception('Location permission denied');
+            }
+
+            final pos = await Geolocator.getCurrentPosition(
+                desiredAccuracy: LocationAccuracy.high);
+            final pm =
+                await placemarkFromCoordinates(pos.latitude, pos.longitude);
+
+            if (pm.isNotEmpty) {
+              final p = pm.first;
+              stateCtrl.text = p.administrativeArea ?? '';
+
+              final districtGuess = p.subAdministrativeArea ?? '';
+              if (stateCtrl.text.trim() == 'Kerala') {
+                final match = kKeralaDistricts.firstWhere(
+                  (d) =>
+                      d.toLowerCase() == districtGuess.toLowerCase() ||
+                      d.toLowerCase().startsWith(
+                          districtGuess.toLowerCase().replaceAll(' ', '')),
+                  orElse: () => districtGuess,
+                );
+                districtCtrl.text = match;
+                // Taluk (area) usually not available from geocoder; leave blank
+                areaCtrl.text = '';
+              } else {
+                // Prefer locality; fallback to subAdministrativeArea
+                final loc =
+                    (p.locality?.isNotEmpty == true ? p.locality! : '').trim();
+                areaCtrl.text = loc.isNotEmpty ? loc : districtGuess;
+              }
+              postalCtrl.text = p.postalCode ?? '';
+              setState(() {}); // ensure rebuild after programmatic changes
+            }
+          } catch (e) {
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Unable to fetch location: $e')),
+              );
+            }
+          } finally {
+            locating.value = false;
+            setState(() {});
+          }
+        }
+
+        return Padding(
+          padding: EdgeInsets.fromLTRB(
+              width * .04, 0, width * .04, insets + width * .035),
+          child: Form(
+            key: formKey,
+            child: ListView(
+              shrinkWrap: true,
+              children: [
+                Text(
+                  docId == null ? 'Add Address' : 'Edit Address',
+                  style: TextStyle(
+                      fontSize: width * .048, fontWeight: FontWeight.w700),
+                ),
+
+                SizedBox(height: width * .022),
+                Text('Type',
+                    style: TextStyle(
+                        fontSize: width * .03, color: Colors.black54)),
+                SizedBox(height: width * .010),
+
+                ValueListenableBuilder<String>(
+                  valueListenable: type,
+                  builder: (_, value, __) => Wrap(
+                    spacing: width * .016,
+                    runSpacing: width * .012,
+                    children: [
+                      _chip('home', value, type, width,
+                          labelController: labelCtrl),
+                      _chip('work', value, type, width,
+                          labelController: labelCtrl),
+                      _chip('other', value, type, width,
+                          labelController: labelCtrl),
+                    ],
+                  ),
+                ),
+
+                SizedBox(height: width * .028),
+                // Label
+                SizedBox(
+                  height: width * .095,
+                  child: TextFormField(
+                    controller: labelCtrl,
+                    style: TextStyle(fontSize: width * .035),
+                    decoration: InputDecoration(
+                      isDense: true,
+                      labelText: 'Label (optional)',
+                      hintText: 'Home, Grandma House…',
+                      hintStyle: TextStyle(
+                          fontSize: width * .033, color: Colors.black45),
+                      contentPadding: EdgeInsets.symmetric(
+                          horizontal: width * .03, vertical: width * .022),
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(width * .03)),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(width * .03),
+                        borderSide: BorderSide(
+                            color: const Color(0xFFDFE3EA),
+                            width: width * .003),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(width * .03),
+                        borderSide: BorderSide(
+                            color: const Color(0xFF2F6BFF),
+                            width: width * .004),
+                      ),
+                    ),
+                  ),
+                ),
+
+                SizedBox(height: width * .02),
+
+                // Address parts (cascading) + GPS button
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        children: [
+                          // STATE (LOCAL LIST)
+                          _taLocalField(
+                            fieldKey: stateKey,
+                            controller: stateCtrl,
+                            label: 'State *',
+                            hint: 'Start typing state',
+                            enabled: true,
+                            minChars: 1,
+                            source: () => kIndiaStates,
+                            onPicked: _onStatePicked,
+                          ),
+                          SizedBox(height: width * .018),
+
+                          // DISTRICT (Kerala only)
+                          if (isKerala())
+                            _taLocalField(
+                              fieldKey: districtKey,
+                              controller: districtCtrl,
+                              label: 'District *',
+                              hint: 'Select district',
+                              enabled: enDistrict(),
+                              minChars: 1,
+                              source: () => kKeralaDistricts,
+                              onPicked: _onDistrictPicked,
+                            ),
+
+                          if (isKerala()) SizedBox(height: width * .018),
+
+                          // AREA (Unified)
+                          if (isKerala())
+                            _taLocalField(
+                              fieldKey: areaLocalKey,
+                              controller: areaCtrl,
+                              label: 'Area *',
+                              hint: districtCtrl.text.trim().isEmpty
+                                  ? 'Pick a district first'
+                                  : 'Type taluk name',
+                              enabled: enArea(),
+                              minChars: 1,
+                              source: () =>
+                                  kKeralaTaluks[districtCtrl.text.trim()] ??
+                                  const [],
+                            )
+                          else
+                            _taAreaRemoteField(
+                              fieldKey: areaRemoteKey,
+                              controller: areaCtrl,
+                              enabled: enArea(),
+                              state: stateCtrl.text.trim(),
+                            ),
+
+                          SizedBox(height: width * .018),
+
+                          // Postal (optional)
+                          SizedBox(
+                            height: width * .095,
+                            child: TextFormField(
+                              controller: postalCtrl,
+                              keyboardType: TextInputType.number,
+                              style: TextStyle(fontSize: width * .035),
+                              decoration: _dec('Postal code', 'PIN / ZIP'),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    SizedBox(width: width * .016),
+                    ValueListenableBuilder<bool>(
+                      valueListenable: locating,
+                      builder: (_, isLoading, __) => SizedBox(
+                        width: width * .13,
+                        height: width * .13,
+                        child: ElevatedButton(
+                          onPressed:
+                              isLoading ? null : _fillWithCurrentLocation,
+                          style: ElevatedButton.styleFrom(
+                            padding: EdgeInsets.zero,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(width * .03),
+                            ),
+                          ),
+                          child: isLoading
+                              ? SizedBox(
+                                  height: width * .055,
+                                  width: width * .055,
+                                  child: const CircularProgressIndicator(
+                                      strokeWidth: 2),
+                                )
+                              : Icon(Icons.my_location, size: width * .055),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+
+                SizedBox(height: width * .02),
+                SizedBox(
+                  height: width * .095,
+                  child: TextFormField(
+                    controller: nameCtrl,
+                    decoration: _dec('Contact Name (optional)', 'Contact name'),
+                    style: TextStyle(fontSize: width * .035),
+                  ),
+                ),
+                SizedBox(height: width * .02),
+                SizedBox(
+                  height: width * .095,
+                  child: TextFormField(
+                    controller: phoneCtrl,
+                    keyboardType: TextInputType.phone,
+                    decoration:
+                        _dec('Contact Phone (optional)', 'Contact phone'),
+                    style: TextStyle(fontSize: width * .035),
+                  ),
+                ),
+                SizedBox(height: width * .02),
+                SizedBox(
+                  child: TextFormField(
+                    controller: noteCtrl,
+                    maxLines: 3,
+                    decoration: _dec('Note (optional)', 'Door code, landmark…'),
+                    style: TextStyle(fontSize: width * .035),
+                  ),
+                ),
+
+                SizedBox(height: width * .03),
+                SizedBox(
+                  height: width * .12,
+                  child: FilledButton(
+                    onPressed: () async {
+                      if (stateCtrl.text.trim().isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                              content: Text('Please select a State')),
+                        );
+                        return;
+                      }
+                      if (areaCtrl.text.trim().isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Please enter Area')),
+                        );
+                        return;
+                      }
+
+                      // Compose readable address from parts (skip empties)
+                      final parts = <String>[
+                        areaCtrl.text.trim(),
+                        if (isKerala() && districtCtrl.text.trim().isNotEmpty)
+                          districtCtrl.text.trim(),
+                        stateCtrl.text.trim(),
+                        if (postalCtrl.text.trim().isNotEmpty)
+                          postalCtrl.text.trim(),
+                      ];
+                      final composedAddress = parts.join(', ');
+
+                      final now = FieldValue.serverTimestamp();
+                      final data = <String, dynamic>{
+                        'type': type.value,
+                        'label': (labelCtrl.text.trim().isEmpty)
+                            ? _prettyType(type.value)
+                            : labelCtrl.text.trim(),
+                        'address': composedAddress,
+
+                        // normalized parts
+                        'state': stateCtrl.text.trim(),
+                        'area': areaCtrl.text.trim(), // <-- unified
+                        'postalCode': postalCtrl.text.trim(),
+
+                        // compatibility mirrors (optional)
+                        'locality': areaCtrl.text.trim(),
+                        'subDistrict': areaCtrl.text.trim(),
+                        if (isKerala()) 'district': districtCtrl.text.trim(),
+
+                        'name': nameCtrl.text.trim(),
+                        'phone': phoneCtrl.text.trim(),
+                        'note': noteCtrl.text.trim(),
+                        'updatedAt': now,
+                        if (docId == null) 'createdAt': now,
+                      };
+
+                      if (docId == null) {
+                        await _col.add(data);
+                        if (!context.mounted) return;
+                        Navigator.pop(ctx);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Address saved')),
+                        );
+                      } else {
+                        await _col
+                            .doc(docId)
+                            .set(data, SetOptions(merge: true));
+                        if (!context.mounted) return;
+                        Navigator.pop(ctx);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Address updated')),
+                        );
+                      }
+                    },
+                    child: Text(
+                      docId == null ? 'Save Address' : 'Update Address',
+                      style: TextStyle(
+                          fontSize: width * .038, fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  String _prettyType(String t) {
+    switch (t) {
+      case 'home':
+        return 'Home';
+      case 'work':
+        return 'Work';
+      default:
+        return 'Other';
+    }
+  }
+
+  // ——— Emoji chips with green outline (no tick) ———
+  static const Map<String, String> _chipEmoji = {
+    'home': '🏠',
+    'work': '🏢',
+    'other': '📍'
+  };
+  static const Color kChipGreen = Color(0xFF22A45D);
+
+  Widget _chip(
+    String value,
+    String current,
+    ValueNotifier<String> controller,
+    double w, {
+    TextEditingController? labelController,
+  }) {
+    final selected = value == current;
+
+    return ChoiceChip(
+      selected: selected,
+      onSelected: (_) {
+        controller.value = value;
+        if (labelController != null) {
+          labelController
+            ..text = _prettyType(value)
+            ..selection = TextSelection.fromPosition(
+              TextPosition(offset: labelController.text.length),
+            );
+        }
+      },
+      showCheckmark: false,
+      avatar: Text(_chipEmoji[value] ?? '📍',
+          style: TextStyle(fontSize: width * .035)),
+      label: Text(
+        _prettyType(value),
+        style: TextStyle(
+          fontSize: width * .032,
+          fontWeight: FontWeight.w600,
+          color: selected ? kChipGreen : Colors.black87,
+        ),
+      ),
+      backgroundColor: Colors.grey.shade100,
+      selectedColor: kChipGreen.withOpacity(.10),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(width * .03),
+        side: BorderSide(
+          color: selected ? kChipGreen : Colors.grey.shade300,
+          width: selected ? width * .006 : width * .003,
+        ),
+      ),
+      labelPadding:
+          EdgeInsets.symmetric(horizontal: width * .02, vertical: width * .008),
+      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      visualDensity: const VisualDensity(horizontal: -2, vertical: -2),
+    );
+  }
+}
+
+/// Empty state
+class _EmptyState extends StatelessWidget {
+  const _EmptyState({required this.onAdd, required this.w});
+  final VoidCallback onAdd;
+  final double w;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: width * .08),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.location_off_outlined,
+                size: width * .18, color: Colors.black38),
+            SizedBox(height: width * .03),
+            Text('No saved addresses',
+                style: TextStyle(
+                    fontSize: width * .045, fontWeight: FontWeight.w700)),
+            SizedBox(height: width * .015),
+            Text(
+              'Add your frequently used locations to pick them quickly while booking.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: width * .035, color: Colors.black54),
+            ),
+            SizedBox(height: width * .04),
+            SizedBox(
+              height: width * .12,
+              child: OutlinedButton.icon(
+                onPressed: onAdd,
+                icon: Icon(Icons.add, size: width * .06),
+                label: Text('Add Address',
+                    style: TextStyle(fontSize: width * .04)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Address tile – uses emojis instead of Material icons
+class _AddressCard extends StatelessWidget {
+  const _AddressCard({
+    required this.w,
+    required this.type,
+    required this.label,
+    required this.address,
+    this.onTap,
+    this.onEdit,
+    this.onDelete,
+  });
+
+  final double w;
+  final String type;
+  final String label;
+  final String address;
+  final VoidCallback? onTap;
+  final VoidCallback? onEdit;
+  final VoidCallback? onDelete;
+
+  String get _emoji {
+    switch (type) {
+      case 'home':
+        return '🏠';
+      case 'work':
+        return '🏢';
+      default:
+        return '📍';
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      elevation: 2,
+      shadowColor: Colors.black12,
+      borderRadius: BorderRadius.circular(width * .04),
+      color: Colors.white,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(width * .04),
+        onTap: onTap,
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(
+              width * .035, width * .03, width * .02, width * .03),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              CircleAvatar(
+                radius: width * .06,
+                backgroundColor: Colors.grey.shade100,
+                child: Text(_emoji, style: TextStyle(fontSize: width * .045)),
+              ),
+              SizedBox(width: width * .03),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(label,
+                        style: TextStyle(
+                            fontSize: width * .042,
+                            fontWeight: FontWeight.w700)),
+                    SizedBox(height: width * .01),
+                    Text(
+                      address,
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                          color: Colors.grey.shade700, fontSize: width * .035),
+                    ),
+                  ],
+                ),
+              ),
+              PopupMenuButton<String>(
+                onSelected: (v) {
+                  if (v == 'edit') onEdit?.call();
+                  if (v == 'delete') onDelete?.call();
+                },
+                itemBuilder: (_) => const [
+                  PopupMenuItem(value: 'edit', child: Text('Edit')),
+                  PopupMenuItem(value: 'delete', child: Text('Delete')),
+                ],
+                icon: Icon(Icons.more_vert, size: width * .06),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// --- tiny cache entry class ---
+class _SuggCacheEntry {
+  final List<String> values;
+  final DateTime ts;
+  const _SuggCacheEntry(this.values, this.ts);
+}
+
+
+
+
+
+
+---------------------------------v3------------------------------------------
+
+
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:drivex/core/constants/localVariables.dart';
+import 'package:drivex/main.dart'; // AppFire.gServiceDb
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:geocoding/geocoding.dart';
+import 'package:flutter_typeahead/flutter_typeahead.dart'; // ^5.2.0
+
+class Addressbookpage extends StatefulWidget {
+  const Addressbookpage({super.key});
+  @override
+  State<Addressbookpage> createState() => _AddressbookpageState();
+}
+
+class _AddressbookpageState extends State<Addressbookpage> {
+  User? get _user => FirebaseAuth.instance.currentUser;
+
+  // Primary (drivex) – user addresses
+  CollectionReference<Map<String, dynamic>> get _col =>
+      FirebaseFirestore.instance
+          .collection('users')
+          .doc(_user!.uid)
+          .collection('saved_addresses');
+
+  // Secondary (g-service) – places_cache
+  FirebaseFirestore get _gsvc => AppFire.gServiceDb;
+
+  // --- in-memory cache to reduce Firestore reads for remote suggestions ---
+  final Map<String, _SuggCacheEntry> _suggCache = {};
+  static const Duration _cacheTtl = Duration(minutes: 10);
+
+  @override
+  Widget build(BuildContext context) {
+    if (_user == null) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Saved Addresses')),
+        body: Center(
+          child: Text(
+            'Please sign in to view saved addresses',
+            style: TextStyle(fontSize: width * .04),
+          ),
+        ),
+      );
+    }
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('Saved Addresses')),
+      floatingActionButton: SizedBox(
+        height: width * .15,
+        child: FloatingActionButton.extended(
+          onPressed: () => _openAddressForm(context),
+          icon: Icon(Icons.add, size: width * .065),
+          label: Text('Add Address', style: TextStyle(fontSize: width * .038)),
+        ),
+      ),
+      body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+        stream: _col.orderBy('updatedAt', descending: true).snapshots(),
+        builder: (context, snap) {
+          if (snap.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snap.hasError) {
+            return Center(
+              child: Text('Error: ${snap.error}',
+                  style: TextStyle(fontSize: width * .038)),
+            );
+          }
+          final docs = snap.data?.docs ?? [];
+          if (docs.isEmpty) {
+            return _EmptyState(
+                onAdd: () => _openAddressForm(context), w: width);
+          }
+
+          return ListView.separated(
+            padding: EdgeInsets.fromLTRB(
+                width * .04, width * .04, width * .04, width * .25),
+            itemCount: docs.length,
+            separatorBuilder: (_, __) => SizedBox(height: width * .03),
+            itemBuilder: (context, i) {
+              final d = docs[i].data();
+              final id = docs[i].id;
+              final type = (d['type'] ?? 'other') as String;
+              final label = (d['label'] ?? _prettyType(type)) as String;
+              final address = (d['address'] ?? '') as String;
+
+              return _AddressCard(
+                w: width,
+                type: type,
+                label: label,
+                address: address,
+                onTap: () {},
+                onEdit: () => _openAddressForm(context, docId: id, initial: d),
+                onDelete: () => _confirmDelete(context, id),
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+
+  Future<void> _confirmDelete(BuildContext context, String docId) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete address?'),
+        content:
+            const Text('This address will be removed from your saved list.'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancel')),
+          FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Delete')),
+        ],
+      ),
+    );
+    if (ok == true) {
+      await _col.doc(docId).delete();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Address deleted')));
+    }
+  }
+
+  // ---------- LOCAL: States list (India) ----------
+  static const List<String> kIndiaStates = [
+    // States (28)
+    'Andhra Pradesh',
+    'Arunachal Pradesh',
+    'Assam',
+    'Bihar',
+    'Chhattisgarh',
+    'Goa',
+    'Gujarat',
+    'Haryana',
+    'Himachal Pradesh',
+    'Jharkhand',
+    'Karnataka',
+    'Kerala',
+    'Madhya Pradesh',
+    'Maharashtra',
+    'Manipur',
+    'Meghalaya',
+    'Mizoram',
+    'Nagaland',
+    'Odisha',
+    'Punjab',
+    'Rajasthan',
+    'Sikkim',
+    'Tamil Nadu',
+    'Telangana',
+    'Tripura',
+    'Uttar Pradesh',
+    'Uttarakhand',
+    'West Bengal',
+    // Union Territories (8)
+    'Andaman and Nicobar Islands',
+    'Chandigarh',
+    'Dadra and Nagar Haveli and Daman and Diu',
+    'Delhi',
+    'Jammu and Kashmir',
+    'Ladakh',
+    'Lakshadweep',
+    'Puducherry',
+  ];
+
+  // ---------- LOCAL: Kerala districts ----------
+  static const List<String> kKeralaDistricts = [
+    'Thiruvananthapuram',
+    'Kollam',
+    'Pathanamthitta',
+    'Alappuzha',
+    'Kottayam',
+    'Idukki',
+    'Ernakulam',
+    'Thrissur',
+    'Palakkad',
+    'Malappuram',
+    'Kozhikode',
+    'Wayanad',
+    'Kannur',
+    'Kasaragod',
+  ];
+
+  // ---------- LOCAL: Kerala sub-districts (Taluks) by district ----------
+  static const Map<String, List<String>> kKeralaTaluks = {
+    'Thiruvananthapuram': [
+      'Thiruvananthapuram',
+      'Chirayinkeezhu',
+      'Neyyattinkara',
+      'Nedumangad',
+      'Varkala',
+      'Kattakada',
+    ],
+    'Kollam': [
+      'Kollam',
+      'Karunagappally',
+      'Kunnathur',
+      'Kottarakkara',
+      'Pathanapuram',
+      'Punalur',
+    ],
+    'Pathanamthitta': [
+      'Adoor',
+      'Konni',
+      'Kozhencherry',
+      'Mallappally',
+      'Ranni',
+      'Thiruvalla',
+    ],
+    'Alappuzha': [
+      'Ambalapuzha',
+      'Cherthala',
+      'Chengannur',
+      'Karthikappally',
+      'Kuttanad',
+      'Mavelikkara',
+    ],
+    'Kottayam': [
+      'Changanassery',
+      'Kanjirappally',
+      'Kottayam',
+      'Meenachil',
+      'Vaikom',
+    ],
+    'Idukki': [
+      'Devikulam',
+      'Idukki',
+      'Peermade',
+      'Thodupuzha',
+      'Udumbanchola',
+    ],
+    'Ernakulam': [
+      'Aluva',
+      'Kanayannur',
+      'Kochi',
+      'Kothamangalam',
+      'Kunnathunad',
+      'Muvattupuzha',
+      'North Paravur',
+    ],
+    'Thrissur': [
+      'Chalakkudy',
+      'Chavakkad',
+      'Kodungallur',
+      'Kunnamkulam',
+      'Mukundapuram',
+      'Thalapilly',
+      'Thrissur',
+    ],
+    'Palakkad': [
+      'Alathur',
+      'Chittur',
+      'Mannarkkad',
+      'Ottappalam',
+      'Palakkad',
+      'Pattambi',
+    ],
+    'Malappuram': [
+      'Ernad',
+      'Kondotty',
+      'Nilambur',
+      'Perinthalmanna',
+      'Ponnani',
+      'Tirur',
+      'Tirurangadi',
+    ],
+    'Kozhikode': [
+      'Koyilandy',
+      'Kozhikode',
+      'Thamarassery',
+      'Vatakara',
+    ],
+    'Wayanad': [
+      'Mananthavady',
+      'Sulthan Bathery',
+      'Vythiri',
+    ],
+    'Kannur': [
+      'Iritty',
+      'Kannur',
+      'Payyannur',
+      'Taliparamba',
+      'Thalassery',
+    ],
+    'Kasaragod': [
+      'Hosdurg',
+      'Kasaragod',
+      'Manjeshwaram',
+      'Vellarikundu',
+    ],
+  };
+
+  // ---------- Firestore helper (distinct + filtered + cached) ----------
+  Future<List<String>> _fetchFromFirestore({
+    required String field, // 'locality' | 'subDistrict'
+    String input = "",
+    String? state,
+    String? subDistrict,
+    String? locality,
+    int limit = 25,
+  }) async {
+    final trimmed = input.trim();
+    final key =
+        'f=$field|s=${(state ?? '').trim()}|d=${(subDistrict ?? '').trim()}|l=${(locality ?? '').trim()}|q=${trimmed.toLowerCase()}';
+
+    // cache
+    final now = DateTime.now();
+    final hit = _suggCache[key];
+    if (hit != null && now.difference(hit.ts) < _cacheTtl) {
+      return hit.values;
+    }
+
+    Query<Map<String, dynamic>> base = _gsvc.collection('places_cache');
+    if (state != null && state.trim().isNotEmpty) {
+      base = base.where('address.state', isEqualTo: state.trim());
+    }
+    if (subDistrict != null && subDistrict.trim().isNotEmpty) {
+      base = base.where('address.subDistrict', isEqualTo: subDistrict.trim());
+    }
+    if (locality != null && locality.trim().isNotEmpty) {
+      base = base.where('address.locality', isEqualTo: locality.trim());
+    }
+
+    Query<Map<String, dynamic>> q = base;
+    if (trimmed.isNotEmpty) {
+      q = q
+          .orderBy('address.$field')
+          .startAt([trimmed]).endAt([trimmed + '\uf8ff']);
+    } else {
+      q = q.orderBy('address.$field');
+    }
+
+    List<String> result;
+    try {
+      final snap = await q.limit(80).get();
+      final set = <String>{};
+      for (final d in snap.docs) {
+        final addr = d.data()['address'];
+        if (addr is Map && addr[field] is String) {
+          final v = (addr[field] as String).trim();
+          if (v.isEmpty) continue;
+          if (trimmed.isEmpty ||
+              v.toLowerCase().startsWith(trimmed.toLowerCase())) {
+            set.add(v);
+            if (set.length >= limit) break;
+          }
+        }
+      }
+      result = set.toList()
+        ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+      result = result.take(limit).toList();
+    } on FirebaseException catch (e) {
+      if (e.code == 'failed-precondition' &&
+          (e.message ?? '').contains('index')) {
+        // fallback (less efficient)
+        final snap = await base.limit(200).get();
+        final set = <String>{};
+        for (final d in snap.docs) {
+          final addr = d.data()['address'];
+          if (addr is Map && addr[field] is String) {
+            final v = (addr[field] as String).trim();
+            if (v.isEmpty) continue;
+            if (trimmed.isEmpty ||
+                v.toLowerCase().startsWith(trimmed.toLowerCase())) {
+              set.add(v);
+              if (set.length >= limit) break;
+            }
+          }
+        }
+        result = set.toList()
+          ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+        result = result.take(limit).toList();
+      } else {
+        rethrow;
+      }
+    }
+
+    _suggCache[key] = _SuggCacheEntry(result, now);
+    return result;
+  }
+
+  /// Unified AREA suggestions:
+  /// - Kerala + district => local taluks
+  /// - Others => merge of Firestore 'locality' and 'subDistrict'
+  Future<List<String>> _fetchAreaSuggestions({
+    required String input,
+    required String state,
+    String? keralaDistrict,
+    int limit = 25,
+  }) async {
+    final q = input.trim();
+    if (state == 'Kerala' && (keralaDistrict ?? '').trim().isNotEmpty) {
+      final list = (kKeralaTaluks[keralaDistrict!.trim()] ?? const []);
+      return _filterLocal(list, q, limit: limit);
+    }
+
+    // Non-Kerala: merge locality + subDistrict
+    final res1 = await _fetchFromFirestore(
+      field: 'locality',
+      input: q,
+      state: state,
+    );
+    // Only fetch subDistrict if we still have room (keeps reads down)
+    List<String> merged = res1;
+    if (res1.length < limit) {
+      final res2 = await _fetchFromFirestore(
+        field: 'subDistrict',
+        input: q,
+        state: state,
+      );
+      final set = {...res1, ...res2};
+      merged = set.toList()
+        ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+    }
+    return merged.take(limit).toList();
+  }
+
+  // local filter helper
+  List<String> _filterLocal(List<String> base, String q, {int limit = 25}) {
+    final qq = q.trim().toLowerCase();
+    final set = <String>{};
+    for (final v in base) {
+      if (qq.isEmpty || v.toLowerCase().startsWith(qq)) {
+        set.add(v);
+        if (set.length >= limit) break;
+      }
+    }
+    final list = set.toList()
+      ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+    return list;
+  }
+
+  /// Add/Edit bottom sheet
+  Future<void> _openAddressForm(BuildContext context,
+      {String? docId, Map<String, dynamic>? initial}) async {
+    final formKey = GlobalKey<FormState>();
+    final type = ValueNotifier<String>((initial?['type'] ?? 'other') as String);
+    final labelCtrl =
+        TextEditingController(text: (initial?['label'] ?? '') as String);
+
+    // Cascading address parts
+    final stateCtrl =
+        TextEditingController(text: (initial?['state'] ?? '') as String);
+
+    // Kerala-specific district (optional, only used for Kerala UI)
+    final districtCtrl =
+        TextEditingController(text: (initial?['district'] ?? '') as String);
+
+    // Unified AREA field (replaces subDistrict/locality/taluk)
+    final areaCtrl =
+        TextEditingController(text: (initial?['area'] ?? '') as String);
+
+    final postalCtrl =
+        TextEditingController(text: (initial?['postalCode'] ?? '') as String);
+
+    final phoneCtrl =
+        TextEditingController(text: (initial?['phone'] ?? '') as String);
+    final nameCtrl =
+        TextEditingController(text: (initial?['name'] ?? '') as String);
+    final noteCtrl =
+        TextEditingController(text: (initial?['note'] ?? '') as String);
+
+    if ((docId == null) && labelCtrl.text.trim().isEmpty) {
+      labelCtrl.text = _prettyType(type.value);
+    }
+
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      showDragHandle: true,
+      backgroundColor: Colors.white,
+      builder: (ctx) {
+        final insets = MediaQuery.of(ctx).viewInsets.bottom;
+        final inputH = width * .095;
+        final locating = ValueNotifier(false);
+
+        InputDecoration _dec(String label, String hint) => InputDecoration(
+              isDense: true,
+              labelText: label,
+              labelStyle: TextStyle(fontSize: width * .034),
+              hintText: hint,
+              hintStyle:
+                  TextStyle(fontSize: width * .033, color: Colors.black45),
+              contentPadding: EdgeInsets.symmetric(
+                  horizontal: width * .03, vertical: width * .022),
+              border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(width * .03)),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(width * .03),
+                borderSide: BorderSide(
+                    color: const Color(0xFFDFE3EA), width: width * .003),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(width * .03),
+                borderSide: BorderSide(
+                    color: const Color(0xFF2F6BFF), width: width * .004),
+              ),
+            );
+
+        bool isKerala() => stateCtrl.text.trim() == 'Kerala';
+
+        // enable/disable logic
+        bool enDistrict() => stateCtrl.text.trim().isNotEmpty && isKerala();
+        bool enArea() =>
+            stateCtrl.text.trim().isNotEmpty &&
+            (!isKerala() || districtCtrl.text.trim().isNotEmpty);
+
+        // clears on parent change
+        void _onStatePicked() {
+          districtCtrl.clear();
+          areaCtrl.clear();
+          setState(() {});
+        }
+
+        void _onDistrictPicked() {
+          areaCtrl.clear();
+          setState(() {});
+        }
+
+        // ---- TypeAhead builders (with Keys to prevent state reuse) ----
+
+        Widget _taLocalField({
+          required Key fieldKey,
+          required TextEditingController controller,
+          required String label,
+          required String hint,
+          required bool enabled,
+          required List<String> Function() source,
+          int minChars = 1,
+          VoidCallback? onPicked,
+        }) {
+          return SizedBox(
+            key: fieldKey, // <- key at wrapper
+            height: inputH,
+            child: AbsorbPointer(
+              absorbing: !enabled,
+              child: Opacity(
+                opacity: enabled ? 1 : 0.55,
+                child: TypeAheadField<String>(
+                  key: fieldKey, // <- key on TypeAheadField too
+                  controller: controller,
+                  hideOnEmpty: true,
+                  debounceDuration: const Duration(milliseconds: 200),
+                  suggestionsCallback: (pattern) async {
+                    final q = pattern.trim();
+                    if (q.length < minChars) return const <String>[];
+                    return _filterLocal(source(), q);
+                  },
+                  itemBuilder: (context, String s) =>
+                      ListTile(dense: true, title: Text(s)),
+                  onSelected: (String s) {
+                    controller.text = s;
+                    onPicked?.call();
+                  },
+                  builder: (context, textCtrl, focusNode) => TextFormField(
+                    key: ValueKey(
+                        '${fieldKey.toString()}_tf'), // distinct TF key
+                    controller: textCtrl,
+                    focusNode: focusNode,
+                    enabled: enabled,
+                    textAlignVertical: TextAlignVertical.center,
+                    style: TextStyle(fontSize: width * .035),
+                    decoration: _dec(label, hint),
+                    onChanged: (_) => setState(() {}),
+                  ),
+                ),
+              ),
+            ),
+          );
+        }
+
+        // Remote (Firestore) TypeAhead for AREA (non-Kerala)
+        Widget _taAreaRemoteField({
+          required Key fieldKey,
+          required TextEditingController controller,
+          required bool enabled,
+          required String state,
+          int minChars = 2,
+        }) {
+          return SizedBox(
+            key: fieldKey,
+            height: inputH,
+            child: AbsorbPointer(
+              absorbing: !enabled,
+              child: Opacity(
+                opacity: enabled ? 1 : 0.55,
+                child: TypeAheadField<String>(
+                  key: fieldKey,
+                  controller: controller,
+                  hideOnEmpty: true,
+                  debounceDuration: const Duration(milliseconds: 300),
+                  suggestionsCallback: (pattern) async {
+                    final q = pattern.trim();
+                    if (q.length < minChars) return const <String>[];
+                    return _fetchAreaSuggestions(
+                      input: q,
+                      state: state,
+                      limit: 25,
+                    );
+                  },
+                  itemBuilder: (context, String s) =>
+                      ListTile(dense: true, title: Text(s)),
+                  onSelected: (String s) {
+                    controller.text = s;
+                  },
+                  builder: (context, textCtrl, focusNode) => TextFormField(
+                    key: ValueKey('${fieldKey.toString()}_tf'),
+                    controller: textCtrl,
+                    focusNode: focusNode,
+                    enabled: enabled,
+                    textAlignVertical: TextAlignVertical.center,
+                    style: TextStyle(fontSize: width * .035),
+                    decoration:
+                        _dec('Area *', 'Locality / Taluk / Sub-district'),
+                    onChanged: (_) => setState(() {}),
+                  ),
+                ),
+              ),
+            ),
+          );
+        }
+
+        // Stable keys for fields (different keys for area-local vs area-remote)
+        final stateKey = const ValueKey('field_state');
+        final districtKey = const ValueKey('field_district');
+        final areaLocalKey = const ValueKey('field_area_local');
+        final areaRemoteKey = const ValueKey('field_area_remote');
+
+        Future<void> _fillWithCurrentLocation() async {
+          locating.value = true;
+          try {
+            if (!await Geolocator.isLocationServiceEnabled()) {
+              throw Exception('Location services are disabled');
+            }
+            var perm = await Geolocator.checkPermission();
+            if (perm == LocationPermission.denied) {
+              perm = await Geolocator.requestPermission();
+            }
+            if (perm == LocationPermission.denied ||
+                perm == LocationPermission.deniedForever) {
+              throw Exception('Location permission denied');
+            }
+
+            final pos = await Geolocator.getCurrentPosition(
+                desiredAccuracy: LocationAccuracy.high);
+            final pm =
+                await placemarkFromCoordinates(pos.latitude, pos.longitude);
+
+            if (pm.isNotEmpty) {
+              final p = pm.first;
+              stateCtrl.text = p.administrativeArea ?? '';
+
+              final districtGuess = p.subAdministrativeArea ?? '';
+              if (stateCtrl.text.trim() == 'Kerala') {
+                final match = kKeralaDistricts.firstWhere(
+                  (d) =>
+                      d.toLowerCase() == districtGuess.toLowerCase() ||
+                      d.toLowerCase().startsWith(
+                          districtGuess.toLowerCase().replaceAll(' ', '')),
+                  orElse: () => districtGuess,
+                );
+                districtCtrl.text = match;
+                // Taluk (area) usually not available from geocoder; leave blank
+                areaCtrl.text = '';
+              } else {
+                // Prefer locality; fallback to subAdministrativeArea
+                final loc =
+                    (p.locality?.isNotEmpty == true ? p.locality! : '').trim();
+                areaCtrl.text = loc.isNotEmpty ? loc : districtGuess;
+              }
+              postalCtrl.text = p.postalCode ?? '';
+              setState(() {}); // ensure rebuild after programmatic changes
+            }
+          } catch (e) {
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Unable to fetch location: $e')),
+              );
+            }
+          } finally {
+            locating.value = false;
+            setState(() {});
+          }
+        }
+
+        return Padding(
+          padding: EdgeInsets.fromLTRB(
+              width * .04, 0, width * .04, insets + width * .035),
+          child: Form(
+            key: formKey,
+            child: ListView(
+              shrinkWrap: true,
+              children: [
+                Text(
+                  docId == null ? 'Add Address' : 'Edit Address',
+                  style: TextStyle(
+                      fontSize: width * .048, fontWeight: FontWeight.w700),
+                ),
+
+                SizedBox(height: width * .022),
+                Text('Type',
+                    style: TextStyle(
+                        fontSize: width * .03, color: Colors.black54)),
+                SizedBox(height: width * .010),
+
+                ValueListenableBuilder<String>(
+                  valueListenable: type,
+                  builder: (_, value, __) => Wrap(
+                    spacing: width * .016,
+                    runSpacing: width * .012,
+                    children: [
+                      _chip('home', value, type, width,
+                          labelController: labelCtrl),
+                      _chip('work', value, type, width,
+                          labelController: labelCtrl),
+                      _chip('other', value, type, width,
+                          labelController: labelCtrl),
+                    ],
+                  ),
+                ),
+
+                SizedBox(height: width * .028),
+                // Label
+                SizedBox(
+                  height: width * .095,
+                  child: TextFormField(
+                    controller: labelCtrl,
+                    style: TextStyle(fontSize: width * .035),
+                    decoration: InputDecoration(
+                      isDense: true,
+                      labelText: 'Label (optional)',
+                      hintText: 'Home, Grandma House…',
+                      hintStyle: TextStyle(
+                          fontSize: width * .033, color: Colors.black45),
+                      contentPadding: EdgeInsets.symmetric(
+                          horizontal: width * .03, vertical: width * .022),
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(width * .03)),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(width * .03),
+                        borderSide: BorderSide(
+                            color: const Color(0xFFDFE3EA),
+                            width: width * .003),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(width * .03),
+                        borderSide: BorderSide(
+                            color: const Color(0xFF2F6BFF),
+                            width: width * .004),
+                      ),
+                    ),
+                  ),
+                ),
+
+                SizedBox(height: width * .02),
+
+                // Address parts (cascading) + GPS button
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        children: [
+                          // STATE (LOCAL LIST)
+                          _taLocalField(
+                            fieldKey: stateKey,
+                            controller: stateCtrl,
+                            label: 'State *',
+                            hint: 'Start typing state',
+                            enabled: true,
+                            minChars: 1,
+                            source: () => kIndiaStates,
+                            onPicked: _onStatePicked,
+                          ),
+                          SizedBox(height: width * .018),
+
+                          // DISTRICT (Kerala only)
+                          if (isKerala())
+                            _taLocalField(
+                              fieldKey: districtKey,
+                              controller: districtCtrl,
+                              label: 'District *',
+                              hint: 'Select district',
+                              enabled: enDistrict(),
+                              minChars: 1,
+                              source: () => kKeralaDistricts,
+                              onPicked: _onDistrictPicked,
+                            ),
+
+                          if (isKerala()) SizedBox(height: width * .018),
+
+                          // AREA (Unified)
+                          if (isKerala())
+                            _taLocalField(
+                              fieldKey: areaLocalKey,
+                              controller: areaCtrl,
+                              label: 'Area *',
+                              hint: districtCtrl.text.trim().isEmpty
+                                  ? 'Pick a district first'
+                                  : 'Type taluk name',
+                              enabled: enArea(),
+                              minChars: 1,
+                              source: () =>
+                                  kKeralaTaluks[districtCtrl.text.trim()] ??
+                                  const [],
+                            )
+                          else
+                            _taAreaRemoteField(
+                              fieldKey: areaRemoteKey,
+                              controller: areaCtrl,
+                              enabled: enArea(),
+                              state: stateCtrl.text.trim(),
+                            ),
+
+                          SizedBox(height: width * .018),
+
+                          
+
+                          // Postal (optional)
+                          SizedBox(
+                            height: width * .095,
+                            child: TextFormField(
+                              controller: postalCtrl,
+                              keyboardType: TextInputType.number,
+                              style: TextStyle(fontSize: width * .035),
+                              decoration: _dec('Postal code', 'PIN / ZIP'),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    SizedBox(width: width * .016),
+                    ValueListenableBuilder<bool>(
+                      valueListenable: locating,
+                      builder: (_, isLoading, __) => SizedBox(
+                        width: width * .13,
+                        height: width * .13,
+                        child: ElevatedButton(
+                          onPressed:
+                              isLoading ? null : _fillWithCurrentLocation,
+                          style: ElevatedButton.styleFrom(
+                            padding: EdgeInsets.zero,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(width * .03),
+                            ),
+                          ),
+                          child: isLoading
+                              ? SizedBox(
+                                  height: width * .055,
+                                  width: width * .055,
+                                  child: const CircularProgressIndicator(
+                                      strokeWidth: 2),
+                                )
+                              : Icon(Icons.my_location, size: width * .055),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+
+                SizedBox(height: width * .02),
+                SizedBox(
+                  height: width * .095,
+                  child: TextFormField(
+                    controller: nameCtrl,
+                    decoration: _dec('Contact Name (optional)', 'Contact name'),
+                    style: TextStyle(fontSize: width * .035),
+                  ),
+                ),
+                SizedBox(height: width * .02),
+                SizedBox(
+                  height: width * .095,
+                  child: TextFormField(
+                    controller: phoneCtrl,
+                    keyboardType: TextInputType.phone,
+                    decoration:
+                        _dec('Contact Phone (optional)', 'Contact phone'),
+                    style: TextStyle(fontSize: width * .035),
+                  ),
+                ),
+                SizedBox(height: width * .02),
+                SizedBox(
+                  child: TextFormField(
+                    controller: noteCtrl,
+                    maxLines: 3,
+                    decoration: _dec('Note (optional)', 'Door code, landmark…'),
+                    style: TextStyle(fontSize: width * .035),
+                  ),
+                ),
+
+                SizedBox(height: width * .03),
+                SizedBox(
+                  height: width * .12,
+                  child: FilledButton(
+                    onPressed: () async {
+                      if (stateCtrl.text.trim().isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                              content: Text('Please select a State')),
+                        );
+                        return;
+                      }
+                      if (areaCtrl.text.trim().isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Please enter Area')),
+                        );
+                        return;
+                      }
+
+                      // Compose readable address from parts (skip empties)
+                      final parts = <String>[
+                        areaCtrl.text.trim(),
+                        if (isKerala() && districtCtrl.text.trim().isNotEmpty)
+                          districtCtrl.text.trim(),
+                        stateCtrl.text.trim(),
+                        if (postalCtrl.text.trim().isNotEmpty)
+                          postalCtrl.text.trim(),
+                      ];
+                      final composedAddress = parts.join(', ');
+
+                      final now = FieldValue.serverTimestamp();
+                      final data = <String, dynamic>{
+                        'type': type.value,
+                        'label': (labelCtrl.text.trim().isEmpty)
+                            ? _prettyType(type.value)
+                            : labelCtrl.text.trim(),
+                        'address': composedAddress,
+
+                        // normalized parts
+                        'state': stateCtrl.text.trim(),
+                        'area': areaCtrl.text.trim(), // <-- unified
+                        'postalCode': postalCtrl.text.trim(),
+
+                        // compatibility mirrors (optional)
+                        'locality': areaCtrl.text.trim(),
+                        'subDistrict': areaCtrl.text.trim(),
+                        if (isKerala()) 'district': districtCtrl.text.trim(),
+
+                        'name': nameCtrl.text.trim(),
+                        'phone': phoneCtrl.text.trim(),
+                        'note': noteCtrl.text.trim(),
+                        'updatedAt': now,
+                        if (docId == null) 'createdAt': now,
+                      };
+
+                      if (docId == null) {
+                        await _col.add(data);
+                        if (!context.mounted) return;
+                        Navigator.pop(ctx);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Address saved')),
+                        );
+                      } else {
+                        await _col
+                            .doc(docId)
+                            .set(data, SetOptions(merge: true));
+                        if (!context.mounted) return;
+                        Navigator.pop(ctx);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Address updated')),
+                        );
+                      }
+                    },
+                    child: Text(
+                      docId == null ? 'Save Address' : 'Update Address',
+                      style: TextStyle(
+                          fontSize: width * .038, fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  String _prettyType(String t) {
+    switch (t) {
+      case 'home':
+        return 'Home';
+      case 'work':
+        return 'Work';
+      default:
+        return 'Other';
+    }
+  }
+
+  // ——— Emoji chips with green outline (no tick) ———
+  static const Map<String, String> _chipEmoji = {
+    'home': '🏠',
+    'work': '🏢',
+    'other': '📍'
+  };
+  static const Color kChipGreen = Color(0xFF22A45D);
+
+  Widget _chip(
+    String value,
+    String current,
+    ValueNotifier<String> controller,
+    double w, {
+    TextEditingController? labelController,
+  }) {
+    final selected = value == current;
+
+    return ChoiceChip(
+      selected: selected,
+      onSelected: (_) {
+        controller.value = value;
+        if (labelController != null) {
+          labelController
+            ..text = _prettyType(value)
+            ..selection = TextSelection.fromPosition(
+              TextPosition(offset: labelController.text.length),
+            );
+        }
+      },
+      showCheckmark: false,
+      avatar: Text(_chipEmoji[value] ?? '📍',
+          style: TextStyle(fontSize: width * .035)),
+      label: Text(
+        _prettyType(value),
+        style: TextStyle(
+          fontSize: width * .032,
+          fontWeight: FontWeight.w600,
+          color: selected ? kChipGreen : Colors.black87,
+        ),
+      ),
+      backgroundColor: Colors.grey.shade100,
+      selectedColor: kChipGreen.withOpacity(.10),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(width * .03),
+        side: BorderSide(
+          color: selected ? kChipGreen : Colors.grey.shade300,
+          width: selected ? width * .006 : width * .003,
+        ),
+      ),
+      labelPadding:
+          EdgeInsets.symmetric(horizontal: width * .02, vertical: width * .008),
+      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      visualDensity: const VisualDensity(horizontal: -2, vertical: -2),
+    );
+  }
+}
+
+/// Empty state
+class _EmptyState extends StatelessWidget {
+  const _EmptyState({required this.onAdd, required this.w});
+  final VoidCallback onAdd;
+  final double w;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: width * .08),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.location_off_outlined,
+                size: width * .18, color: Colors.black38),
+            SizedBox(height: width * .03),
+            Text('No saved addresses',
+                style: TextStyle(
+                    fontSize: width * .045, fontWeight: FontWeight.w700)),
+            SizedBox(height: width * .015),
+            Text(
+              'Add your frequently used locations to pick them quickly while booking.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: width * .035, color: Colors.black54),
+            ),
+            SizedBox(height: width * .04),
+            SizedBox(
+              height: width * .12,
+              child: OutlinedButton.icon(
+                onPressed: onAdd,
+                icon: Icon(Icons.add, size: width * .06),
+                label: Text('Add Address',
+                    style: TextStyle(fontSize: width * .04)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Address tile – uses emojis instead of Material icons
+class _AddressCard extends StatelessWidget {
+  const _AddressCard({
+    required this.w,
+    required this.type,
+    required this.label,
+    required this.address,
+    this.onTap,
+    this.onEdit,
+    this.onDelete,
+  });
+
+  final double w;
+  final String type;
+  final String label;
+  final String address;
+  final VoidCallback? onTap;
+  final VoidCallback? onEdit;
+  final VoidCallback? onDelete;
+
+  String get _emoji {
+    switch (type) {
+      case 'home':
+        return '🏠';
+      case 'work':
+        return '🏢';
+      default:
+        return '📍';
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      elevation: 2,
+      shadowColor: Colors.black12,
+      borderRadius: BorderRadius.circular(width * .04),
+      color: Colors.white,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(width * .04),
+        onTap: onTap,
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(
+              width * .035, width * .03, width * .02, width * .03),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              CircleAvatar(
+                radius: width * .06,
+                backgroundColor: Colors.grey.shade100,
+                child: Text(_emoji, style: TextStyle(fontSize: width * .045)),
+              ),
+              SizedBox(width: width * .03),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(label,
+                        style: TextStyle(
+                            fontSize: width * .042,
+                            fontWeight: FontWeight.w700)),
+                    SizedBox(height: width * .01),
+                    Text(
+                      address,
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                          color: Colors.grey.shade700, fontSize: width * .035),
+                    ),
+                  ],
+                ),
+              ),
+              PopupMenuButton<String>(
+                onSelected: (v) {
+                  if (v == 'edit') onEdit?.call();
+                  if (v == 'delete') onDelete?.call();
+                },
+                itemBuilder: (_) => const [
+                  PopupMenuItem(value: 'edit', child: Text('Edit')),
+                  PopupMenuItem(value: 'delete', child: Text('Delete')),
+                ],
+                icon: Icon(Icons.more_vert, size: width * .06),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// --- tiny cache entry class ---
+class _SuggCacheEntry {
+  final List<String> values;
+  final DateTime ts;
+  const _SuggCacheEntry(this.values, this.ts);
+}

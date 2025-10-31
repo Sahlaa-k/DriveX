@@ -2,6 +2,7 @@ import 'package:drivex/core/constants/color_constant.dart';
 import 'package:drivex/core/constants/imageConstants.dart';
 import 'package:drivex/core/constants/localVariables.dart';
 import 'package:drivex/feature/bottomNavigation/pages/D2D/D2D_page01.dart';
+import 'package:drivex/feature/bottomNavigation/pages/D2D/addressBookPage.dart';
 // import 'package:drivex/feature/bottomNavigation/pages/D2D/D2D_HistoryPage.dart';
 // import 'package:drivex/feature/bottomNavigation/pages/D2D/D2D_page04.dart';
 import 'package:drivex/feature/bottomNavigation/pages/D2D/d2d.dart';
@@ -74,7 +75,7 @@ class _D2DMainpageState extends State<D2DMainpage> {
       'label': 'Saved Address',
       'icon': Icons.book_outlined,
       'color': const Color(0xFFFF2D55),
-      // 'page': D2DHistorypage()
+      'page': Addressbookpage()
     },
     {
       'label': 'Wallet',

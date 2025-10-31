@@ -36,7 +36,7 @@ class _DoortodoorpageState extends State<Doortodoorpage> {
   LatLng startLocation = LatLng(10.0159, 76.3419); // Example: Cochin
   LatLng endLocation = LatLng(10.0889, 76.5276); // Example: Aluva
 
-  final String googleAPIKey = "AIzaSyD1fU_UDudvvy1HEPEoJ4Ify_YOYDlhdEY";
+  final String googleAPIKey = "";
 
   @override
   void initState() {
@@ -48,7 +48,7 @@ class _DoortodoorpageState extends State<Doortodoorpage> {
   }
 
   Future<void> _getDirections() async {
-    final String apiKey = "AIzaSyD1fU_UDudvvy1HEPEoJ4Ify_YOYDlhdEY";
+    final String apiKey = "";
 
     final String url =
         "https://maps.googleapis.com/maps/api/directions/json?origin=${pickup.latitude},${pickup.longitude}&destination=${drop.latitude},${drop.longitude}&key=$apiKey";

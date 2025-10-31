@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:drivex/core/constants/color_constant.dart';
 import 'package:drivex/core/constants/localVariables.dart';
 import 'package:drivex/core/widgets/BackGroundTopGradient.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LanguagePage extends StatefulWidget {
   const LanguagePage({super.key});
@@ -143,7 +143,8 @@ class _LanguagePageState extends State<LanguagePage> {
                     final item = _languages[i];
                     final selected = _selectedCode == item['code'];
                     return InkWell(
-                      onTap: () => setState(() => _selectedCode = item['code']!),
+                      onTap: () =>
+                          setState(() => _selectedCode = item['code']!),
                       child: Container(
                         padding: EdgeInsets.symmetric(
                           horizontal: width * 0.04,
@@ -152,15 +153,16 @@ class _LanguagePageState extends State<LanguagePage> {
                         decoration: BoxDecoration(
                           borderRadius: i == 0
                               ? BorderRadius.only(
-                            topLeft: Radius.circular(width * 0.04),
-                            topRight: Radius.circular(width * 0.04),
-                          )
+                                  topLeft: Radius.circular(width * 0.04),
+                                  topRight: Radius.circular(width * 0.04),
+                                )
                               : (i == _languages.length - 1
-                              ? BorderRadius.only(
-                            bottomLeft: Radius.circular(width * 0.04),
-                            bottomRight: Radius.circular(width * 0.04),
-                          )
-                              : BorderRadius.zero),
+                                  ? BorderRadius.only(
+                                      bottomLeft: Radius.circular(width * 0.04),
+                                      bottomRight:
+                                          Radius.circular(width * 0.04),
+                                    )
+                                  : BorderRadius.zero),
                           border: Border(
                             top: BorderSide(
                                 color: i == 0
@@ -292,9 +294,8 @@ class _LanguagePageState extends State<LanguagePage> {
                     SizedBox(width: width * 0.03),
                     Expanded(
                       child: Text(
-                        (_languages
-                            .firstWhere((e) => e['code'] == _selectedCode)
-                        ['demo']) ??
+                        (_languages.firstWhere(
+                                (e) => e['code'] == _selectedCode)['demo']) ??
                             '',
                         style: TextStyle(
                           fontSize: width * 0.04,

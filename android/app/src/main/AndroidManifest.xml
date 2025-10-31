@@ -18,7 +18,7 @@
         <!-- ✅ Google Maps API Key -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="AIzaSyD1fU_UDudvvy1HEPEoJ4Ify_YOYDlhdEY" />
+            android:value="AIzaSyDwD1BJXVxky_Cy6xzyQh_5A2PW9cTOO0I" />
 
         <activity
             android:name="com.kamal.drivex.MainActivity"
